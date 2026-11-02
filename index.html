@@ -1,0 +1,2564 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Livar Topola - Takmičarski Portal</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Supabase JavaScript Klijent -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-dark: #070d19;
+            --bg-card: #0f172a;
+            --bg-input: #1b263b;
+            --border-color: #1e293b;
+            --primary: #38bdf8;
+            --accent-gold: #fbbf24;
+            --accent-silver: #94a3b8;
+            --accent-bronze: #d97706;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; padding: 8px; }
+        .container { max-width: 1000px; margin: 0 auto; width: 100%; padding-bottom: 40px; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; background: var(--bg-card); padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border-color); }
+        .brand { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .brand-logo { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); background: #fff; }
+        .brand-title h1 { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .brand-title p { font-size: 10px; color: var(--primary); font-weight: 600; }
+        .header-banner-img { height: 44px; max-width: 200px; object-fit: contain; border-radius: 6px; border: 1px solid var(--border-color); }
+        
+        .header-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .admin-banner { background: rgba(16, 185, 129, 0.15); border: 1px solid var(--success); color: var(--success); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .sync-status { font-size: 10px; color: var(--success); display: flex; align-items: center; gap: 4px; padding: 4px 8px; background: var(--bg-input); border-radius: 6px; border: 1px solid var(--border-color); }
+        
+        .btn { padding: 6px 10px; border-radius: 6px; font-weight: 600; font-size: 11px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s; white-space: nowrap; }
+        .btn-primary { background-color: #1e293b; color: var(--primary); border: 1px solid rgba(56, 189, 248, 0.3); }
+        .btn-danger-outline { background-color: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-admin { background-color: var(--accent-gold); color: #000; font-weight: 700; }
+        
+        .nav-tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--border-color); margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; width: 100%; -webkit-overflow-scrolling: touch; }
+        .tab-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 7px 10px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; border-radius: 6px 6px 0 0; white-space: nowrap; }
+        .tab-btn.active { color: #000; background-color: var(--primary); border-color: var(--primary); }
+        
+        .podium-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; margin-bottom: 14px; }
+        .podium-card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 6px; text-align: center; }
+        .podium-card.gold { border: 2px solid var(--accent-gold); background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(251,191,36,0.08)); }
+        .podium-card.silver { border: 2px solid var(--accent-silver); background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(148,163,184,0.08)); }
+        .podium-card.bronze { border: 2px solid var(--accent-bronze); background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(217,119,6,0.08)); }
+        
+        .badge-icon { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px; font-weight: 800; font-size: 11px; }
+        .badge-1 { background: rgba(251, 191, 36, 0.2); color: var(--accent-gold); border: 2px solid var(--accent-gold); }
+        .badge-2 { background: rgba(148, 163, 184, 0.2); color: var(--accent-silver); border: 2px solid var(--accent-silver); }
+        .badge-3 { background: rgba(217, 119, 6, 0.2); color: var(--accent-bronze); border: 2px solid var(--accent-bronze); }
+        
+        .content-section { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; margin-bottom: 14px; width: 100%; overflow: hidden; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px; }
+        
+        .table-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; min-width: 480px; }
+        th { padding: 8px 6px; font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        td { padding: 8px 6px; border-bottom: 1px solid var(--border-color); word-break: break-word; }
+        tr:last-child td { border-bottom: none; }
+        
+        .add-catch-box { display: flex; align-items: center; gap: 4px; }
+        .input-num { background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); padding: 4px; border-radius: 4px; width: 65px; font-size: 11px; }
+        .btn-add-catch { background-color: var(--primary); color: #000; font-weight: 700; padding: 4px 6px; border-radius: 4px; border: none; cursor: pointer; font-size: 10px; }
+        
+        .form-group { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+        .input-text, select, textarea { background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); padding: 6px 8px; border-radius: 6px; font-size: 11px; flex: 1; min-width: 120px; }
+        
+        .empty-state { text-align: center; padding: 16px 8px; color: var(--text-muted); font-size: 11px; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: flex-start; justify-content: center; z-index: 1000; padding: 10px; overflow-y: auto; }
+        .modal-content { background: var(--bg-card); border: 1px solid var(--border-color); padding: 16px; border-radius: 12px; width: 100%; max-width: 850px; margin: 20px auto; }
+        
+        .clickable-name { cursor: pointer; color: var(--primary); font-weight: 700; text-decoration: underline; text-decoration-color: rgba(56, 189, 248, 0.3); }
+        .clickable-name:hover { text-decoration-color: var(--primary); }
+
+        .profile-avatar { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); background: var(--bg-input); }
+        .checkbox-label { font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+        
+        .event-card { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
+        .event-card:hover { border-color: var(--primary); background: rgba(56, 189, 248, 0.05); }
+        
+        .event-thumb-banner { width: 110px; height: 60px; object-fit: contain; border-radius: 6px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); flex-shrink: 0; }
+        .modal-banner-img { width: 100%; max-height: 160px; object-fit: contain; border-radius: 6px; background: rgba(0,0,0,0.3); display: block; margin: 0 auto; }
+
+        .archive-card { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; margin-bottom: 8px; transition: all 0.2s; }
+        .archive-card:hover { border-color: var(--primary); }
+        .catch-tag { background: rgba(56,189,248,0.15); border: 1px solid var(--primary); color: var(--primary); padding: 2px 5px; border-radius: 4px; font-size: 9px; margin-right: 3px; display: inline-flex; align-items: center; gap: 3px; }
+        
+        .type-btn { background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-muted); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; }
+        .type-btn.active { background: var(--primary); color: #000; border-color: var(--primary); }
+        .file-btn { display: inline-block; padding: 6px 10px; background: var(--bg-input); border: 1px solid var(--primary); color: var(--primary); border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; text-align: center; }
+
+        .stat-badge { background: var(--bg-input); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 8px; text-align: center; flex: 1; min-width: 100px; }
+        .stat-badge .num { font-size: 16px; font-weight: 800; color: var(--primary); }
+        .stat-badge .label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; margin-top: 8px; }
+        .gallery-thumb { width: 100%; height: 70px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border-color); cursor: pointer; transition: transform 0.2s; }
+        .gallery-thumb:hover { transform: scale(1.05); border-color: var(--primary); }
+        .comp-card-history { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+        .comp-card-history.manual { border-left: 3px solid var(--accent-gold); }
+        .comp-card-history.app { border-left: 3px solid var(--primary); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="admin-banner-wrap"></div>
+
+    <header>
+        <div class="brand">
+            <img src="https://i.ibb.co/3ykV2Q5x/livar.jpg" alt="Logo" class="brand-logo" id="app-logo-img" onerror="this.src='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/fish.svg'">
+            <div class="brand-title">
+                <h1 id="header-project-title">LIVAR - TOPOLA</h1>
+                <p id="header-project-subtitle">Takmičarski Portal</p>
+            </div>
+            <div id="header-banner-container"></div>
+        </div>
+        <div class="header-actions">
+            <div class="sync-status"><i class="fa-solid fa-cloud"></i> Sinhronizovano</div>
+            <div id="auth-button-area"></div>
+        </div>
+    </header>
+
+    <div class="nav-tabs" id="tabs-header"></div>
+    <div id="tab-content"></div>
+</div>
+
+<!-- Modal za prijavu / registraciju -->
+<div class="modal" id="loginModal">
+    <div class="modal-content">
+        <h3 style="margin-bottom: 10px; font-size: 14px;"><i class="fa-solid fa-user-lock"></i> Prijava / Registracija</h3>
+        
+        <div style="display: flex; gap: 4px; border-bottom: 1px solid var(--border-color); margin-bottom: 12px;">
+            <button class="btn btn-primary" style="flex:1" id="tab-btn-login" onclick="toggleAuthForm('login')">Prijava</button>
+            <button class="btn btn-primary" style="flex:1" id="tab-btn-register" onclick="toggleAuthForm('register')">Nova Registracija</button>
+        </div>
+
+        <div id="form-login-wrap">
+            <select id="login-role" class="input-text" style="width: 100%; margin-bottom: 8px;">
+                <option value="user">Takmičar / Korisnik</option>
+                <option value="scaler">Merač (Unos ulova)</option>
+                <option value="admin">Administrator</option>
+            </select>
+            <input type="text" id="login-username" class="input-text" style="width: 100%; margin-bottom: 8px;" placeholder="Korisničko ime ili Email">
+            <input type="password" id="admin-password" class="input-text" style="width: 100%; margin-bottom: 10px;" placeholder="Lozinka">
+            <div style="display: flex; justify-content: flex-end; gap: 6px;">
+                <button class="btn btn-primary" onclick="closeLoginModal()">Otkaži</button>
+                <button class="btn btn-success" onclick="loginUser()">Prijavi se (Enter)</button>
+            </div>
+        </div>
+
+        <div id="form-register-wrap" style="display: none;">
+            <input type="text" id="reg-name" class="input-text" style="width: 100%; margin-bottom: 8px;" placeholder="Ime i prezime">
+            <input type="text" id="reg-username" class="input-text" style="width: 100%; margin-bottom: 8px;" placeholder="Korisničko ime">
+            <input type="email" id="reg-email" class="input-text" style="width: 100%; margin-bottom: 8px;" placeholder="Email adresa">
+            <input type="password" id="reg-pass" class="input-text" style="width: 100%; margin-bottom: 4px;" placeholder="Lozinka">
+            <div style="font-size:9px; color:var(--text-muted); margin-bottom:8px;">Lozinka mora imati min 8 karaktera, 1 veliko, 1 malo slovo, 1 broj i 1 specijalni znak.</div>
+            <input type="text" id="reg-club" class="input-text" style="width: 100%; margin-bottom: 10px;" placeholder="Matični Klub / Ekipa (opciono)">
+            <div style="display: flex; justify-content: flex-end; gap: 6px;">
+                <button class="btn btn-primary" onclick="closeLoginModal()">Otkaži</button>
+                <button class="btn btn-success" onclick="registerUser()">Registruj se</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal za dodavanje starog takmičenja -->
+<div class="modal" id="addPastCompModal">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+            <h3 style="font-size:14px; color:var(--accent-gold);"><i class="fa-solid fa-clock-rotate-left"></i> Dodaj Staro Takmičenje</h3>
+            <button class="btn btn-primary" onclick="document.getElementById('addPastCompModal').style.display='none'">X</button>
+        </div>
+        <div class="form-group">
+            <input type="text" id="past-comp-name" class="input-text" placeholder="Naziv takmičenja (npr. Kup Srema 2024)">
+            <input type="text" id="past-comp-lake" class="input-text" placeholder="Voda / Jezero / Mesto">
+        </div>
+        <div class="form-group">
+            <input type="date" id="past-comp-date" class="input-text">
+            <input type="number" id="past-comp-rank" class="input-text" placeholder="Plasman / Mesto (npr. 1)">
+            <input type="number" step="0.001" id="past-comp-weight" class="input-text" placeholder="Ukupan ulov (kg)">
+        </div>
+        <div class="form-group">
+            <textarea id="past-comp-notes" class="input-text" rows="2" placeholder="Utisci ili napomena sa takmičenja..."></textarea>
+        </div>
+        <div style="margin-bottom:12px;">
+            <label class="file-btn" style="width:100%;"><i class="fa-solid fa-images"></i> Dodaj Slike za ovo Takmičenje (max 3MB)
+                <input type="file" accept="image/*" multiple style="display:none;" onchange="handlePastCompPhotos(this)">
+            </label>
+            <div id="past-comp-photo-preview" class="gallery-grid" style="margin-top:8px;"></div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:6px;">
+            <button class="btn btn-primary" onclick="document.getElementById('addPastCompModal').style.display='none'">Otkaži</button>
+            <button class="btn btn-success" onclick="savePastCompetition()"><i class="fa-solid fa-floppy-disk"></i> Sačuvaj Takmičenje</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal za pregled/dodavanje galerije takmičenja -->
+<div class="modal" id="compGalleryModal">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+            <h3 style="font-size:14px; color:var(--primary);" id="comp-gallery-modal-title"><i class="fa-solid fa-images"></i> Galerija Takmičenja</h3>
+            <button class="btn btn-primary" onclick="document.getElementById('compGalleryModal').style.display='none'">X</button>
+        </div>
+        <div id="comp-gallery-modal-body" class="gallery-grid" style="grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:10px; max-height:350px; overflow-y:auto; padding:4px;"></div>
+        <div style="margin-top:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <label class="file-btn" id="add-more-gallery-btn"><i class="fa-solid fa-plus"></i> Dodaj Nove Slike u Galeriju
+                <input type="file" accept="image/*" multiple style="display:none;" id="add-more-gallery-input">
+            </label>
+            <button class="btn btn-primary" onclick="document.getElementById('compGalleryModal').style.display='none'">Zatvori</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="profileModal"><div class="modal-content" id="profileModalContent"></div></div>
+<div class="modal" id="eventModal"><div class="modal-content" id="eventModalContent"></div></div>
+<div class="modal" id="adminCompModal"><div class="modal-content" id="adminCompModalContent"></div></div>
+<div class="modal" id="viewArchiveModal"><div class="modal-content" id="viewArchiveModalContent"></div></div>
+
+<script>
+    // --- SUPABASE PODEŠAVANJA ---
+    const SUPABASE_URL = "https://fymfriuxjezawhvkrokg.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_zpqft_RFucrK_UWA9rtVpg_mG1ZPgR2";
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const SUPABASE_ROW_ID = 1;
+
+    let currentUser = null; 
+    let activeTab = "home"; 
+    let selectedCompetitionId = null;
+    let selectedFishType = "Šaran"; 
+    let showOptionalBFFields = false; 
+    let selectedViewRoundId = "all"; 
+    let archiveSelectedRoundTab = "all"; // Pamti izabrani tab kola unutar modala arhive
+
+    let tempPastCompPhotos = [];
+    let activeCompFilter = 'all';
+
+    let appData = {
+        projectTitle: "LIVAR - TOPOLA",
+        projectSubtitle: "Takmičarski Portal",
+        logoUrl: "https://i.ibb.co/3ykV2Q5x/livar.jpg",
+        bannerUrl: "",
+        competitions: [
+            {
+                id: "comp_1",
+                name: "Prvenstvo Mika Alas 2026",
+                lake: "Jezero Mika Alas",
+                date: "15/11/2026",
+                maxParticipants: "20",
+                fee: "3000 RSD",
+                showFee: true,
+                status: "active",
+                bannerUrl: "",
+                activeRoundId: "r1",
+                rounds: [ 
+                    { id: "r1", name: "Kolo 1", lake: "Jezero Mika Alas", sectors: ["Sektor A", "Sektor B"] },
+                    { id: "r2", name: "Kolo 2", lake: "Jezero Mika Alas", sectors: ["Sektor A", "Sektor B"] }
+                ],
+                anglers: [
+                    { id: "a1", name: "Marko Petrović", club: "Livar", box: "12", sector: "Sektor A", catches: { "r1": [4.800, 5.200], "r2": [3.000] }, roundSectors: { "r1": "Sektor A", "r2": "Sektor B" }, roundBoxes: { "r1": "12", "r2": "4" } },
+                    { id: "a2", name: "Nikola Jovanović", club: "Šaran", box: "5", sector: "Sektor B", catches: { "r1": [3.100, 6.000], "r2": [5.500] }, roundSectors: { "r1": "Sektor B", "r2": "Sektor A" }, roundBoxes: { "r1": "5", "r2": "8" } }
+                ],
+                waitingList: [],
+                roundBiggestFish: {
+                    "r1": { anglerName: "Nikola Jovanović", box: "5", sector: "Sektor B", type: "Šaran", weight: 6.000 }
+                }
+            }
+        ],
+        users: [],
+        manualAnglers: [{ id: "m1", name: "Petar Perić", club: "KSR Dunav" }],
+        archives: [],
+        passwords: { admin: "admin123", scaler: "merac123" }
+    };
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            const loginModal = document.getElementById('loginModal');
+            if (loginModal && loginModal.style.display === 'flex') loginUser();
+        }
+    });
+
+    function processImageFile(file, maxWidth, maxHeight, callback) {
+        if (!file) return;
+
+        const maxSizeBytes = 3 * 1024 * 1024;
+        if (file.size > maxSizeBytes) {
+            alert('Slika je veća od dozvoljenih 3 MB! Molimo izaberite manju sliku.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth || height > maxHeight) {
+                    const ratio = Math.min(maxWidth / width, maxHeight / height);
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                const dataUrl = canvas.toDataURL('image/webp', 0.85);
+                callback(dataUrl);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function loadLocalData() {
+        const saved = localStorage.getItem('livar_portal_supabase_v2');
+        if (saved) { try { appData = JSON.parse(saved); } catch(e){} }
+    }
+
+    function saveLocalData() { localStorage.setItem('livar_portal_supabase_v2', JSON.stringify(appData)); }
+
+    async function loadDataFromCloud() {
+        loadLocalData();
+        updateBrandingUI();
+        renderAuthUI();
+        renderTabs();
+        renderContent();
+
+        try {
+            const { data, error } = await supabaseClient
+                .from('app_data')
+                .select('data')
+                .eq('id', SUPABASE_ROW_ID)
+                .single();
+
+            if (!error && data && data.data && Object.keys(data.data).length > 0) {
+                appData = data.data;
+                saveLocalData();
+                updateBrandingUI();
+                renderAuthUI();
+                renderTabs();
+                renderContent();
+            } else {
+                await saveDataToCloud();
+            }
+        } catch (e) {
+            console.error("Greška pri učitavanju:", e);
+        }
+    }
+
+    async function saveDataToCloud() {
+        saveLocalData();
+        updateBrandingUI();
+        renderContent();
+        try {
+            const { error } = await supabaseClient
+                .from('app_data')
+                .update({ data: appData })
+                .eq('id', SUPABASE_ROW_ID);
+
+            if (error) console.error("Greška pri čuvanju:", error.message);
+        } catch (e) {
+            console.error("Greška pri komunikaciji sa bazom:", e);
+        }
+    }
+
+    function startLivePolling() {
+        supabaseClient
+            .channel('public:app_data')
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_data' }, payload => {
+                if (payload && payload.new && payload.new.data) {
+                    const activeInput = document.activeElement;
+                    const isTyping = activeInput && (activeInput.tagName === 'INPUT' || activeInput.tagName === 'SELECT' || activeInput.tagName === 'TEXTAREA');
+                    
+                    appData = payload.new.data;
+                    saveLocalData();
+                    
+                    if (!isTyping) {
+                        updateBrandingUI(); renderAuthUI(); renderTabs(); renderContent();
+                    }
+                }
+            })
+            .subscribe();
+    }
+
+    function updateBrandingUI() {
+        document.getElementById('header-project-title').innerText = appData.projectTitle || "LIVAR - TOPOLA";
+        document.getElementById('header-project-subtitle').innerText = appData.projectSubtitle || "Takmičarski Portal";
+        const logoImg = document.getElementById('app-logo-img');
+        if (logoImg) logoImg.src = appData.logoUrl || "https://i.ibb.co/3ykV2Q5x/livar.jpg";
+
+        const bannerContainer = document.getElementById('header-banner-container');
+        if (bannerContainer) {
+            if (appData.bannerUrl) {
+                bannerContainer.innerHTML = `<img src="${appData.bannerUrl}" class="header-banner-img" alt="Reklama">`;
+            } else {
+                bannerContainer.innerHTML = '';
+            }
+        }
+    }
+
+    function formatDateToDisplay(dateStr) {
+        if (!dateStr) return '';
+        if (dateStr.includes('/')) return dateStr;
+        let parts = dateStr.split('-');
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        return dateStr;
+    }
+
+    function formatDateToInput(dateStr) {
+        if (!dateStr) return '';
+        if (dateStr.includes('-')) return dateStr;
+        let parts = dateStr.split('/');
+        if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        return dateStr;
+    }
+
+    function renderAuthUI() {
+        const authArea = document.getElementById('auth-button-area');
+        const bannerArea = document.getElementById('admin-banner-wrap');
+
+        if (currentUser?.role === 'admin') {
+            bannerArea.innerHTML = `<div class="admin-banner"><i class="fa-solid fa-user-shield"></i> Administrator</div>`;
+            authArea.innerHTML = `<button class="btn btn-primary" onclick="logoutUser()"><i class="fa-solid fa-right-from-bracket"></i> Odjava</button>`;
+        } else if (currentUser?.role === 'scaler') {
+            bannerArea.innerHTML = `<div class="admin-banner" style="background: rgba(56, 189, 248, 0.15); border-color: var(--primary); color: var(--primary);"><i class="fa-solid fa-scale-balanced"></i> Merač</div>`;
+            authArea.innerHTML = `<button class="btn btn-primary" onclick="logoutUser()"><i class="fa-solid fa-right-from-bracket"></i> Odjava</button>`;
+        } else if (currentUser?.role === 'user') {
+            bannerArea.innerHTML = `<div class="admin-banner" style="background: rgba(56, 189, 248, 0.15); border-color: var(--primary); color: var(--primary);"><i class="fa-solid fa-user"></i> Dobrodošli, <strong>${currentUser.name}</strong></div>`;
+            authArea.innerHTML = `
+                <button class="btn btn-primary" onclick="switchTab('my_profile')"><i class="fa-solid fa-user-gear"></i> Moj Profil</button>
+                <button class="btn btn-primary" onclick="logoutUser()"><i class="fa-solid fa-right-from-bracket"></i> Odjava</button>
+            `;
+        } else {
+            bannerArea.innerHTML = '';
+            authArea.innerHTML = `<button class="btn btn-admin" onclick="openLoginModal()"><i class="fa-solid fa-lock"></i> Prijava / Registracija</button>`;
+        }
+    }
+
+    function openLoginModal() { document.getElementById('loginModal').style.display = 'flex'; }
+    function closeLoginModal() { document.getElementById('loginModal').style.display = 'none'; }
+    function toggleAuthForm(type) {
+        document.getElementById('form-login-wrap').style.display = type === 'login' ? 'block' : 'none';
+        document.getElementById('form-register-wrap').style.display = type === 'register' ? 'block' : 'none';
+    }
+
+    function validatePasswordStrength(pass) {
+        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_-\s])[A-Za-z\d@$!%*?&.#_-\s]{8,}$/.test(pass);
+    }
+
+    function loginUser() {
+        const role = document.getElementById('login-role').value;
+        const pass = document.getElementById('admin-password').value;
+        const uInput = document.getElementById('login-username').value.trim();
+
+        if (role === 'admin') {
+            if (pass === (appData.passwords?.admin || "admin123")) {
+                currentUser = { role: 'admin', name: 'Administrator' };
+                closeLoginModal(); renderAuthUI(); renderTabs(); renderContent();
+            } else alert('Pogrešna admin lozinka!');
+        } else if (role === 'scaler') {
+            if (pass === (appData.passwords?.scaler || "merac123")) {
+                currentUser = { role: 'scaler', name: 'Merač' };
+                closeLoginModal(); renderAuthUI(); renderTabs(); renderContent();
+            } else alert('Pogrešna meračka lozinka!');
+        } else {
+            const user = (appData.users || []).find(u => (u.username === uInput || u.email === uInput) && u.password === pass);
+            if (user) {
+                currentUser = { role: 'user', username: user.username, name: user.name };
+                closeLoginModal(); renderAuthUI(); renderTabs(); renderContent();
+            } else alert('Pogrešno korisničko ime/email ili lozinka!');
+        }
+    }
+
+    async function registerUser() {
+        const name = document.getElementById('reg-name').value.trim();
+        const username = document.getElementById('reg-username').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+        const pass = document.getElementById('reg-pass').value.trim();
+        const club = document.getElementById('reg-club').value.trim();
+
+        if (!name || !username || !email || !pass) { alert('Popunite obavezna polja!'); return; }
+        if (!appData.users) appData.users = [];
+        if (appData.users.some(u => u.username === username || u.email === email)) { alert('Korisničko ime ili email je zauzet!'); return; }
+        if (!validatePasswordStrength(pass)) { alert('Lozinka ne ispunjava zahteve bezbednosti!'); return; }
+
+        const newUser = {
+            id: 'u_' + Date.now(), name, username, email, password: pass, club,
+            birthDate: '', city: '', tackle: '', biggestCatch: '', teams: [], pastCompetitions: [],
+            privacy: { showName: true, showBirth: true, showClub: true, showCity: true, showTackle: true, showRecord: true, showPast: true }
+        };
+
+        appData.users.push(newUser);
+        currentUser = { role: 'user', username, name };
+        closeLoginModal();
+        await saveDataToCloud();
+        alert('Uspešna registracija!');
+    }
+
+    function logoutUser() { currentUser = null; activeTab = 'home'; renderAuthUI(); renderTabs(); renderContent(); }
+
+    function renderTabs() {
+        const tabsHeader = document.getElementById('tabs-header');
+        let html = `<button class="tab-btn ${activeTab === 'home' ? 'active' : ''}" onclick="switchTab('home')"><i class="fa-solid fa-house"></i> Početna</button>`;
+        
+        if (currentUser?.role === 'admin' || currentUser?.role === 'scaler') {
+            html += `<button class="tab-btn ${activeTab === 'measurement' ? 'active' : ''}" onclick="switchTab('measurement')"><i class="fa-solid fa-scale-balanced" style="color:var(--accent-gold)"></i> Merenje</button>`;
+        }
+
+        html += `<button class="tab-btn ${activeTab === 'archives' ? 'active' : ''}" onclick="switchTab('archives')"><i class="fa-solid fa-box-archive"></i> Arhiva</button>`;
+        html += `<button class="tab-btn ${activeTab === 'database' ? 'active' : ''}" onclick="switchTab('database')"><i class="fa-solid fa-database"></i> Baza Takmičara</button>`;
+
+        if (currentUser?.role === 'user') {
+            html += `<button class="tab-btn ${activeTab === 'my_profile' ? 'active' : ''}" onclick="switchTab('my_profile')"><i class="fa-solid fa-user-gear"></i> Moj Profil</button>`;
+        }
+        if (currentUser?.role === 'admin') {
+            html += `<button class="tab-btn ${activeTab === 'management' ? 'active' : ''}" onclick="switchTab('management')"><i class="fa-solid fa-sliders"></i> Upravljanje</button>`;
+        }
+
+        tabsHeader.innerHTML = html;
+    }
+
+    function switchTab(tab, compId = null) {
+        activeTab = tab;
+        if (compId) {
+            selectedCompetitionId = compId;
+            selectedViewRoundId = "all";
+        }
+        renderTabs();
+        renderContent();
+    }
+
+    function getAnglerTotalWeight(angler) {
+        if (!angler.catches) return 0;
+        if (Array.isArray(angler.catches)) {
+            return angler.catches.reduce((a, b) => a + b, 0);
+        }
+        let total = 0;
+        for (let roundId in angler.catches) {
+            total += (angler.catches[roundId] || []).reduce((a, b) => a + b, 0);
+        }
+        return total;
+    }
+
+    function getAnglerRoundWeight(angler, roundId) {
+        if (!angler.catches) return 0;
+        if (Array.isArray(angler.catches)) return roundId === 'r1' ? angler.catches.reduce((a,b)=>a+b,0) : 0;
+        return (angler.catches[roundId] || []).reduce((a,b) => a + b, 0);
+    }
+
+    function calculateFipsedStandings(comp, roundFilterId = 'all') {
+        const anglers = comp.anglers || [];
+        const rounds = comp.rounds || [{ id: 'r1', name: 'Kolo 1', sectors: ['Sektor A'] }];
+
+        let results = anglers.map(a => ({
+            id: a.id,
+            name: a.name,
+            club: a.club,
+            sector: a.sector,
+            box: a.box,
+            catches: a.catches,
+            totalWeight: getAnglerTotalWeight(a),
+            roundPoints: {},
+            totalPoints: 0,
+            roundWeights: {}
+        }));
+
+        rounds.forEach(round => {
+            let roundSectors = round.sectors || ['Sektor A'];
+            let sectorGroups = {};
+
+            roundSectors.forEach(sec => { sectorGroups[sec] = []; });
+            
+            results.forEach(res => {
+                let origAngler = anglers.find(a => a.id === res.id);
+                let sec = (origAngler && origAngler.roundSectors && origAngler.roundSectors[round.id]) ? origAngler.roundSectors[round.id] : (res.sector || roundSectors[0] || 'Sektor A');
+                if (!sectorGroups[sec]) sectorGroups[sec] = [];
+                sectorGroups[sec].push(res);
+                res.roundWeights[round.id] = getAnglerRoundWeight(origAngler, round.id);
+            });
+
+            for (let sec in sectorGroups) {
+                let secAnglers = sectorGroups[sec];
+                if (secAnglers.length === 0) continue;
+
+                secAnglers.sort((a, b) => getAnglerRoundWeight(anglers.find(x=>x.id===b.id), round.id) - getAnglerRoundWeight(anglers.find(x=>x.id===a.id), round.id));
+
+                let i = 0;
+                while (i < secAnglers.length) {
+                    let sameWeightGroup = [secAnglers[i]];
+                    let j = i + 1;
+                    let wI = getAnglerRoundWeight(anglers.find(x=>x.id===secAnglers[i].id), round.id);
+                    while (j < secAnglers.length && getAnglerRoundWeight(anglers.find(x=>x.id===secAnglers[j].id), round.id) === wI) {
+                        sameWeightGroup.push(secAnglers[j]);
+                        j++;
+                    }
+
+                    let sumPositions = 0;
+                    for (let k = 0; k < sameWeightGroup.length; k++) {
+                        sumPositions += (i + k + 1);
+                    }
+                    let avgPts = sumPositions / sameWeightGroup.length;
+
+                    sameWeightGroup.forEach(ang => {
+                        ang.roundPoints[round.id] = avgPts;
+                    });
+
+                    i = j;
+                }
+            }
+        });
+
+        results.forEach(res => {
+            let tPts = 0;
+            rounds.forEach(r => {
+                let defaultPts = comp.anglers.length || 1;
+                tPts += (res.roundPoints[r.id] !== undefined ? res.roundPoints[r.id] : defaultPts);
+            });
+            res.totalPoints = tPts;
+        });
+
+        if (roundFilterId !== 'all') {
+            results.sort((a, b) => {
+                let pA = a.roundPoints[roundFilterId] !== undefined ? a.roundPoints[roundFilterId] : 999;
+                let pB = b.roundPoints[roundFilterId] !== undefined ? b.roundPoints[roundFilterId] : 999;
+                if (pA !== pB) return pA - pB;
+                return b.roundWeights[roundFilterId] - a.roundWeights[roundFilterId];
+            });
+        } else {
+            results.sort((a, b) => {
+                if (a.totalPoints !== b.totalPoints) return a.totalPoints - b.totalPoints;
+                return b.totalWeight - a.totalWeight;
+            });
+        }
+
+        return results;
+    }
+
+    function calculateTeamStandings(comp) {
+        const individualStandings = calculateFipsedStandings(comp);
+        let teamMap = {};
+
+        individualStandings.forEach(a => {
+            let teamName = (a.club && a.club.trim() !== '') ? a.club.trim() : 'Samostalni takmičari';
+            if (!teamMap[teamName]) {
+                teamMap[teamName] = {
+                    teamName,
+                    members: [],
+                    totalPoints: 0,
+                    totalWeight: 0
+                };
+            }
+            teamMap[teamName].members.push(a.name);
+            teamMap[teamName].totalPoints += a.totalPoints;
+            teamMap[teamName].totalWeight += a.totalWeight;
+        });
+
+        let teamList = Object.values(teamMap);
+        
+        teamList.sort((a, b) => {
+            if (a.totalPoints !== b.totalPoints) return a.totalPoints - b.totalPoints;
+            return b.totalWeight - a.totalWeight;
+        });
+
+        return teamList;
+    }
+
+    function renderContent() {
+        const content = document.getElementById('tab-content');
+        if (activeTab === 'home') renderHome(content);
+        else if (activeTab === 'competition_view') renderCompetitionView(content);
+        else if (activeTab === 'measurement') renderMeasurement(content);
+        else if (activeTab === 'archives') renderArchives(content);
+        else if (activeTab === 'database') renderDatabase(content);
+        else if (activeTab === 'my_profile') renderMyProfile(content);
+        else if (activeTab === 'management') renderManagement(content);
+    }
+
+    // 1. POČETNA STRANA
+    function renderHome(container) {
+        const activeComps = (appData.competitions || []).filter(c => c.status === 'active');
+        const upcomingComps = (appData.competitions || []).filter(c => c.status === 'upcoming');
+
+        let html = `
+            <div class="content-section" style="border-color: var(--primary);">
+                <div class="section-header">
+                    <div style="font-weight:700; font-size:14px; color: var(--primary);"><i class="fa-solid fa-play"></i> Aktivna Takmičenja (${activeComps.length})</div>
+                </div>
+                ${activeComps.length === 0 ? '<div class="empty-state">Trenutno nema aktivnih takmičenja.</div>' : ''}
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    ${activeComps.map(c => `
+                        <div class="event-card" onclick="switchTab('competition_view', '${c.id}')">
+                            ${c.bannerUrl ? `<img src="${c.bannerUrl}" class="event-thumb-banner" alt="Baner">` : ''}
+                            <div style="flex:1;">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <strong style="font-size:13px; color:var(--text-main);">${c.name}</strong>
+                                    <span style="font-size:10px; background:rgba(16,185,129,0.2); color:var(--success); border:1px solid var(--success); padding:2px 6px; border-radius:4px;"><i class="fa-solid fa-bolt"></i> U TOKU</span>
+                                </div>
+                                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+                                    <i class="fa-solid fa-location-dot"></i> Jezero: ${c.lake} | <i class="fa-solid fa-users"></i> Takmičara: ${c.anglers?.length || 0}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div class="content-section" style="border-color: var(--accent-gold); margin-top:14px;">
+                <div class="section-header">
+                    <div style="font-weight:700; font-size:14px; color: var(--accent-gold);"><i class="fa-solid fa-bullhorn"></i> Najava Takmičenja (${upcomingComps.length})</div>
+                </div>
+                ${upcomingComps.length === 0 ? '<div class="empty-state">Trenutno nema najavljenih novih takmičenja.</div>' : ''}
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    ${upcomingComps.map(c => {
+                        const totalApplied = (c.anglers?.length || 0) + (c.waitingList?.length || 0);
+                        const paidCount = (c.waitingList || []).filter(w => w.paid).length + (c.anglers?.length || 0);
+                        return `
+                            <div class="event-card" onclick="openEventDetails('${c.id}')">
+                                ${c.bannerUrl ? `<img src="${c.bannerUrl}" class="event-thumb-banner" alt="Baner">` : ''}
+                                <div style="flex:1;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <strong style="font-size:13px; color:var(--text-main);">${c.name}</strong>
+                                        <span style="font-size:10px; background:rgba(251,191,36,0.2); color:var(--accent-gold); border:1px solid var(--accent-gold); padding:2px 6px; border-radius:4px;"><i class="fa-solid fa-calendar"></i> NAJAVA</span>
+                                    </div>
+                                    <div style="font-size:11px; color:var(--text-muted); margin-top:6px; display:flex; flex-wrap:wrap; gap:10px;">
+                                        <span><i class="fa-solid fa-calendar-day"></i> ${formatDateToDisplay(c.date)}</span>
+                                        <span><i class="fa-solid fa-location-dot"></i> ${c.lake}</span>
+                                        ${c.showFee ? `<span><i class="fa-solid fa-coins"></i> ${c.fee}</span>` : ''}
+                                    </div>
+                                    <div style="font-size:11px; margin-top:6px; color:var(--primary); font-weight:700;">
+                                        <i class="fa-solid fa-users"></i> Prijavljeno: ${totalApplied} / ${c.maxParticipants} 
+                                        <span style="margin-left:8px; color:var(--success);"><i class="fa-solid fa-check-double"></i> Kotizacija Plaćena: ${paidCount}/${totalApplied}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+        container.innerHTML = html;
+    }
+
+    function openEventDetails(compId) {
+        const comp = appData.competitions.find(c => c.id === compId);
+        if (!comp) return;
+
+        const modal = document.getElementById('eventModal');
+        const content = document.getElementById('eventModalContent');
+
+        const isApplied = currentUser?.role === 'user' && comp.waitingList?.some(w => w.username === currentUser.username);
+
+        content.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+                <h3 style="font-size:14px; color:var(--accent-gold);"><i class="fa-solid fa-bullhorn"></i> ${comp.name}</h3>
+                <button class="btn btn-primary" onclick="document.getElementById('eventModal').style.display='none'">X</button>
+            </div>
+            
+            ${comp.bannerUrl ? `<div style="text-align:center; margin-bottom:10px; background:rgba(0,0,0,0.3); border-radius:8px; padding:6px; border:1px solid var(--border-color);"><img src="${comp.bannerUrl}" class="modal-banner-img"></div>` : ''}
+
+            <div style="font-size:11px; line-height:1.5; margin-bottom:12px;">
+                <p><strong>Jezero:</strong> ${comp.lake}</p>
+                <p><strong>Datum:</strong> ${formatDateToDisplay(comp.date)}</p>
+                <p><strong>Max učesnika:</strong> ${comp.maxParticipants}</p>
+                ${comp.showFee ? `<p><strong>Kotizacija:</strong> ${comp.fee}</p>` : ''}
+            </div>
+
+            <div style="margin-bottom:10px;">
+                <strong style="font-size:11px; color:var(--success);"><i class="fa-solid fa-user-check"></i> Potvrđeni Učesnici (${comp.anglers?.length || 0}):</strong>
+                <div style="max-height:130px; overflow-y:auto; font-size:10px; background:var(--bg-input); padding:6px; border-radius:4px; margin-top:4px;">
+                    ${(!comp.anglers || comp.anglers.length === 0) ? '<span style="color:var(--text-muted)">Nema još potvrđenih učesnika.</span>' : ''}
+                    ${(comp.anglers || []).map((a, idx) => `<div><strong>${idx + 1}.</strong> ${a.name} (${a.club || 'Solo'})</div>`).join('')}
+                </div>
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <strong style="font-size:11px; color:var(--accent-gold);"><i class="fa-solid fa-clock"></i> Lista Čekanja (${comp.waitingList?.length || 0}):</strong>
+                <div style="max-height:100px; overflow-y:auto; font-size:10px; background:var(--bg-input); padding:6px; border-radius:4px; margin-top:4px;">
+                    ${(!comp.waitingList || comp.waitingList.length === 0) ? '<span style="color:var(--text-muted)">Nema niko na čekanju.</span>' : ''}
+                    ${(comp.waitingList || []).map((w, idx) => `<div><strong>${idx + 1}.</strong> ${w.name} (${w.club || 'Solo'}) ${w.paid ? '<span style="color:var(--success)">[Plaćeno]</span>' : '<span style="color:var(--text-muted)">[Čeka uplatu]</span>'}</div>`).join('')}
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:6px;">
+                ${currentUser?.role === 'user' ? (
+                    isApplied ? 
+                    `<button class="btn btn-danger-outline" onclick="leaveWaitingList('${comp.id}')"><i class="fa-solid fa-user-minus"></i> Odjavi se sa čekanja</button>` :
+                    `<button class="btn btn-success" onclick="applyToWaitingList('${comp.id}')"><i class="fa-solid fa-user-plus"></i> Prijavi se na čekanje</button>`
+                ) : '<span style="font-size:10px; color:var(--text-muted)">Prijavite se za opciju prijave.</span>'}
+            </div>
+        `;
+        modal.style.display = 'flex';
+    }
+
+    function openAdminCompModal(compId) {
+        if (currentUser?.role !== 'admin') return;
+        const comp = appData.competitions.find(c => c.id === compId);
+        if (!comp) return;
+
+        const modal = document.getElementById('adminCompModal');
+        const content = document.getElementById('adminCompModalContent');
+
+        let html = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+                <h3 style="font-size:14px; color:var(--accent-gold);"><i class="fa-solid fa-sliders"></i> Podešavanje Takmičenja: ${comp.name}</h3>
+                <button class="btn btn-primary" onclick="document.getElementById('adminCompModal').style.display='none'">X</button>
+            </div>
+
+            ${comp.bannerUrl ? `<div style="text-align:center; background:rgba(0,0,0,0.3); padding:8px; border-radius:8px; margin-bottom:10px; border:1px solid var(--border-color);"><img src="${comp.bannerUrl}" class="modal-banner-img"></div>` : ''}
+
+            <div style="background:var(--bg-input); padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid var(--border-color);">
+                <div style="font-size:11px; font-weight:700; color:var(--primary); margin-bottom:6px;"><i class="fa-solid fa-pen"></i> Osnovni Podaci i Baner Takmičenja</div>
+                
+                <div class="form-group">
+                    <input type="text" id="pop-name-${comp.id}" class="input-text" value="${comp.name}" placeholder="Ime takmičenja">
+                    <input type="text" id="pop-lake-${comp.id}" class="input-text" value="${comp.lake}" placeholder="Jezero">
+                </div>
+                <div class="form-group">
+                    <input type="date" id="pop-date-${comp.id}" class="input-text" value="${formatDateToInput(comp.date)}">
+                    <input type="text" id="pop-fee-${comp.id}" class="input-text" value="${comp.fee || ''}" placeholder="Kotizacija">
+                    <input type="number" id="pop-max-${comp.id}" class="input-text" value="${comp.maxParticipants || 20}" placeholder="Max mesta">
+                </div>
+
+                <div style="margin-top:6px; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                    <label class="file-btn"><i class="fa-solid fa-image"></i> Promeni Baner Takmičenja (max 3MB) <input type="file" accept="image/*" style="display:none;" onchange="uploadCompBanner('${comp.id}', this)"></label>
+                    <button class="btn btn-success" style="margin-left:auto;" onclick="savePopCompBasic('${comp.id}')"><i class="fa-solid fa-save"></i> Sačuvaj Osnovne Podatke</button>
+                </div>
+            </div>
+
+            <div style="background:var(--bg-input); padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid var(--border-color);">
+                <div style="font-size:11px; font-weight:700; color:var(--accent-gold); margin-bottom:6px;"><i class="fa-solid fa-layer-group"></i> Podešavanje Kola i Jezera po Kolima</div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    ${(comp.rounds || []).map((r, rIdx) => `
+                        <div style="background:var(--bg-card); padding:8px; border-radius:6px; font-size:10px; display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
+                            <input type="text" id="pop-rname-${comp.id}-${rIdx}" class="input-text" style="font-size:10px; padding:3px;" value="${r.name}">
+                            <input type="text" id="pop-rlake-${comp.id}-${rIdx}" class="input-text" style="font-size:10px; padding:3px;" value="${r.lake || comp.lake}" placeholder="Jezero za ovo kolo">
+                            <input type="text" id="pop-rsec-${comp.id}-${rIdx}" class="input-text" style="font-size:10px; padding:3px;" value="${(r.sectors || []).join(', ')}" placeholder="Sektori (npr Sektor A, Sektor B)">
+                            <button class="btn btn-primary" style="font-size:8px; padding:3px 6px;" onclick="savePopRoundDetails('${comp.id}', ${rIdx})">Sačuvaj Kolo</button>
+                            <button class="btn btn-danger-outline" style="font-size:8px; padding:3px 6px;" onclick="removePopRound('${comp.id}', ${rIdx})">X</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="margin-top:8px; display:flex; gap:4px;">
+                    <input type="text" id="pop-new-rname-${comp.id}" class="input-text" placeholder="Naziv novog kola (npr. Kolo 2)">
+                    <button class="btn btn-success" onclick="addPopRound('${comp.id}')">+ Dodaj Kolo</button>
+                </div>
+            </div>
+
+            <div style="background:var(--bg-input); padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid var(--border-color);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <strong style="font-size:12px; color:var(--primary);"><i class="fa-solid fa-users"></i> Takmičari, Sektori i Box-ovi za sva kola (${comp.anglers?.length || 0}):</strong>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Takmičar</th>
+                                ${(comp.rounds || [{id:'r1', name:'Kolo 1'}]).map(r => `<th>${r.name} (Sektor / Box)</th>`).join('')}
+                                <th>Izbaci</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(!comp.anglers || comp.anglers.length === 0) ? '<tr><td colspan="3"><div class="empty-state">Nema takmičara u takmičenju.</div></td></tr>' : ''}
+                            ${(comp.anglers || []).map(a => `
+                                <tr>
+                                    <td><strong>${a.name}</strong> <span style="font-size:9px; color:var(--text-muted)">(${a.club || 'Solo'})</span></td>
+                                    ${(comp.rounds || [{id:'r1', name:'Kolo 1'}]).map(r => {
+                                        let curSec = (a.roundSectors && a.roundSectors[r.id]) ? a.roundSectors[r.id] : (a.sector || 'Sektor A');
+                                        let curBox = (a.roundBoxes && a.roundBoxes[r.id]) ? a.roundBoxes[r.id] : (a.box || '1');
+                                        return `
+                                            <td>
+                                                <div style="display:flex; gap:4px;">
+                                                    <select id="pop_sec_${comp.id}_${a.id}_${r.id}" class="input-text" style="font-size:9px; padding:2px;">
+                                                        ${(r.sectors || ['Sektor A']).map(sOpt => `<option value="${sOpt}" ${sOpt === curSec ? 'selected' : ''}>${sOpt}</option>`).join('')}
+                                                    </select>
+                                                    <input type="text" id="pop_box_${comp.id}_${a.id}_${r.id}" class="input-text" style="width:40px; font-size:9px; padding:2px;" value="${curBox}">
+                                                </div>
+                                            </td>
+                                        `;
+                                    }).join('')}
+                                    <td><button class="btn btn-danger-outline" style="font-size:8px; padding:2px 4px;" onclick="removeAnglerFromComp('${comp.id}', '${a.id}')">Izbaci</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                ${comp.anglers && comp.anglers.length > 0 ? `
+                    <div style="margin-top:12px; text-align:right;">
+                        <button class="btn btn-success" style="font-size:12px; padding:8px 14px;" onclick="saveAllAnglerSectorsPop('${comp.id}')"><i class="fa-solid fa-floppy-disk"></i> Sačuvaj sve izmene takmičara (Jednim klikom)</button>
+                    </div>
+                ` : ''}
+            </div>
+
+            <div style="background:var(--bg-input); padding:10px; border-radius:8px; border:1px solid var(--border-color);">
+                <strong style="font-size:11px; color:var(--accent-gold);"><i class="fa-solid fa-clock"></i> Lista Čekanja - Dodavanje novih takmičara (${comp.waitingList?.length || 0}):</strong>
+                <div style="font-size:10px; margin-top:6px;">
+                    ${(!comp.waitingList || comp.waitingList.length === 0) ? '<span style="color:var(--text-muted)">Nema niko na čekanju.</span>' : ''}
+                    ${(comp.waitingList || []).map((w, idx) => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding:4px 0;">
+                            <div><strong>${idx + 1}.</strong> ${w.name} (${w.club || 'Solo'})</div>
+                            <button class="btn btn-success" style="font-size:9px; padding:2px 6px;" onclick="promoteWaitingToAngler('${comp.id}', ${idx})">Prebaci u takmičare</button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        content.innerHTML = html;
+        modal.style.display = 'flex';
+    }
+
+    async function savePopCompBasic(compId) {
+        if (currentUser?.role !== 'admin') return;
+        const comp = appData.competitions.find(c => c.id === compId);
+        if (!comp) return;
+
+        comp.name = document.getElementById(`pop-name-${compId}`).value.trim();
+        comp.lake = document.getElementById(`pop-lake-${compId}`).value.trim();
+        let rawD = document.getElementById(`pop-date-${compId}`).value;
+        comp.date = formatDateToDisplay(rawD) || rawD;
+        comp.fee = document.getElementById(`pop-fee-${compId}`).value.trim();
+        comp.maxParticipants = document.getElementById(`pop-max-${compId}`).value;
+
+        await saveDataToCloud();
+        alert('Osnovne izmene sačuvane!');
+        openAdminCompModal(compId);
+    }
+
+    function uploadCompBanner(compId, inputElem) {
+        if (inputElem.files && inputElem.files[0]) {
+            processImageFile(inputElem.files[0], 800, 300, async function(base64Data) {
+                const comp = appData.competitions.find(c => c.id === compId);
+                if (comp) {
+                    comp.bannerUrl = base64Data;
+                    await saveDataToCloud();
+                    openAdminCompModal(compId);
+                }
+            });
+        }
+    }
+
+    async function savePopRoundDetails(compId, rIdx) {
+        if (currentUser?.role !== 'admin') return;
+        const comp = appData.competitions.find(c => c.id === compId);
+        if (comp && comp.rounds && comp.rounds[rIdx]) {
+            comp.rounds[rIdx].name = document.getElementById(`pop-rname-${compId}-${rIdx}`).value.trim();
+            comp.rounds[rIdx].lake = document.getElementById(`pop-rlake-${compId}-${rIdx}`).value.trim();
+            let secStr = document.getElementById(`pop-rsec-${compId}-${rIdx}`).value.trim();
+            comp.rounds[rIdx].sectors = secStr ? secStr.split(',').map(s=>s.trim()) : ['Sektor A'];
+
+            await saveDataToCloud();
+            alert('Kolo uspešno sačuvano!');
+            openAdminCompModal(compId);
+        }
+    }
+
+    async function addPopRound(compId) {
+        if (currentUser?.role !== 'admin') return;
+        const comp = appData.competitions.find(c => c.id === compId);
+        const rName = document.getElementById(`pop-new-rname-${compId}`).value.trim();
+
+        if (comp && rName) {
+            if (!comp.rounds) comp.rounds = [];
+            comp.rounds.push({ id: 'r_' + Date.now(), name: rName, lake: comp.lake, sectors: ['Sektor A', 'Sektor B'] });
+            await saveDataToCloud();
+            openAdminCompModal(compId);
+        }
+    }
+
+    async function removePopRound(compId, rIdx) {
+        if (currentUser?.role !== 'admin') return;
+        const comp = appData.competitions.find(c => c.id === compId);
+        if (comp && comp.rounds) {
+            comp.rounds.splice(rIdx, 1);
+            await saveDataToCloud();
+            openAdminCompModal(compId);
+        }
+    }
+
+    async function saveAllAnglerSectorsPop(compId) {
+        if (currentUser?.role !== 'admin') return;
+        const comp = appData.competitions.find(c => c.id === compId);
+        if (!comp || !comp.anglers) return;
+
+        comp.anglers.forEach(a => {
+            if (!a.roundSectors) a.roundSectors = {};
+            if (!a.roundBoxes) a.roundBoxes = {};
+
+            (comp.rounds || [{id:'r1'}]).forEach(r => {
+                let secElem = document.getElementById(`pop_sec_${compId}_${a.id}_${r.id}`);
+                let boxElem = document.getElementById(`pop_box_${compId}_${a.id}_${r.id}`);
+                if (secElem) a.roundSectors[r.id] = secElem.value;
+                if (boxElem) a.roundBoxes[r.id] = boxElem.value.trim();
+            });
+
+            if (comp.rounds && comp.rounds[0]) {
+                a.sector = a.roundSectors[comp.rounds[0].id] || 'Sektor A';
+                a.box = a.roundBoxes[comp.rounds[0].id] || '1';
+            }
+        });
+
+        await saveDataToCloud();
+        alert('Sve izmene za takmičare su sačuvane jednim klikom!');
+        openAdminCompModal(compId);
+    }
+
+    async function removeAnglerFromComp(compId, anglerId) {
+        if (currentUser?.role !== 'admin') return;
+        const comp = appData.competitions.find(c => c.id === compId);
+        if (comp && comp.anglers) {
+            comp.anglers = comp.anglers.filter(a => a.id !== anglerId);
+            await saveDataToCloud();
+            openAdminCompModal(compId);
+        }
+    }
+
+    async function promoteWaitingToAngler(compId, wIdx) {
+        if (currentUser?.role !== 'admin') return;
+        const comp = appData.competitions.find(c => c.id === compId);
+        if (comp && comp.waitingList && comp.waitingList[wIdx]) {
+            const w = comp.waitingList[wIdx];
+            if (!comp.anglers) comp.anglers = [];
+
+            comp.anglers.push({
+                id: 'a_' + Date.now(),
+                name: w.name,
+                club: w.club || 'Solo',
+                sector: 'Sektor A',
+                box: '1',
+                catches: {},
+                roundSectors: {},
+                roundBoxes: {}
+            });
+
+            comp.waitingList.splice(wIdx, 1);
+            await saveDataToCloud();
+            openAdminCompModal(compId);
+        }
+    }
+
+    async function applyToWaitingList(compId) {
+        const comp = appData.competitions.find(c => c.id === compId);
+        if (!comp || currentUser?.role !== 'user') return;
+        const user = appData.users.find(u => u.username === currentUser.username);
+
+        if (!comp.waitingList) comp.waitingList = [];
+        if (comp.waitingList.some(w => w.username === user.username)) return;
+
+        comp.waitingList.push({ username: user.username, name: user.name, club: user.club || 'Solo', paid: false });
+        document.getElementById('eventModal').style.display = 'none';
+        await saveDataToCloud();
+        alert('Prijavljeni ste na čekanje!');
+    }
+
+    async function leaveWaitingList(compId) {
+        const comp = appData.competitions.find(c => c.id === compId);
+        if (!comp || currentUser?.role !== 'user') return;
+
+        comp.waitingList = comp.waitingList.filter(w => w.username !== currentUser.username);
+        document.getElementById('eventModal').style.display = 'none';
+        await saveDataToCloud();
+        alert('Odjavljeni ste sa čekanja.');
+    }
+
+    // PREGLED TAKMIČENJA
+    function renderCompetitionView(container) {
+        const comp = appData.competitions.find(c => c.id === selectedCompetitionId);
+        if (!comp) { renderHome(container); return; }
+
+        const standings = calculateFipsedStandings(comp, selectedViewRoundId);
+        const rounds = comp.rounds || [{ id: 'r1', name: 'Kolo 1' }];
+        const isMultiRound = rounds.length > 1;
+
+        let totalLakeWeightCurrent = 0;
+        (comp.anglers || []).forEach(a => {
+            if (selectedViewRoundId === 'all') {
+                totalLakeWeightCurrent += getAnglerTotalWeight(a);
+            } else {
+                totalLakeWeightCurrent += getAnglerRoundWeight(a, selectedViewRoundId);
+            }
+        });
+
+        let html = `
+            <div class="content-section" style="border-color: var(--primary);">
+                <div class="section-header">
+                    <button class="btn btn-primary" onclick="switchTab('home')"><i class="fa-solid fa-arrow-left"></i> Nazad na početnu</button>
+                    <div style="font-weight:800; font-size:14px; color:var(--primary);">${comp.name}</div>
+                    <div style="font-size:12px; font-weight:800; color:var(--success); background:rgba(16,185,129,0.15); padding:4px 8px; border-radius:6px; border:1px solid var(--success);">
+                        <i class="fa-solid fa-fish"></i> Ukupno na jezercu: ${totalLakeWeightCurrent.toFixed(3)} kg
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const top3 = calculateFipsedStandings(comp, 'all').slice(0, 3);
+        if (top3.length > 0) {
+            html += `<div class="podium-grid">`;
+            top3.forEach((a, idx) => {
+                let rankNum = idx + 1;
+                let cardStyle = rankNum === 1 ? 'gold' : (rankNum === 2 ? 'silver' : 'bronze');
+                html += `
+                    <div class="podium-card ${cardStyle}">
+                        <div class="badge-icon badge-${rankNum}">${rankNum}</div>
+                        <div style="font-weight:700; font-size:11px;">${a.name}</div>
+                        <div style="font-size:9px; color:var(--text-muted)">${a.club || ''}</div>
+                        <div style="color:var(--accent-gold); font-weight:800; font-size:12px; margin-top:2px;">${a.totalPoints} Neg. Bod.</div>
+                        <div style="font-size:9px; color:var(--primary); font-weight:700;">${a.totalWeight.toFixed(3)} kg</div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        }
+
+        let rbfMap = comp.roundBiggestFish || {};
+        let overallBf = null;
+        let maxW = 0;
+        for (let rId in rbfMap) {
+            if (rbfMap[rId] && rbfMap[rId].weight > maxW) {
+                maxW = rbfMap[rId].weight;
+                overallBf = rbfMap[rId];
+            }
+        }
+
+        html += `<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:8px; margin-bottom:14px;">`;
+
+        if (!isMultiRound) {
+            let singleBf = rbfMap['r1'] || overallBf;
+            html += `
+                <div class="content-section" style="border-color: var(--accent-gold); background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(251,191,36,0.05)); margin-bottom:0;">
+                    <div style="font-size:9px; color:var(--accent-gold); font-weight:700;"><i class="fa-solid fa-trophy"></i> NAJVEĆA RIBA</div>
+                    <div style="font-size:11px; font-weight:700; margin-top:2px;">${singleBf ? `${singleBf.anglerName} [${singleBf.type || 'Riba'}]` : 'Nije uneta'}</div>
+                    <div style="font-size:12px; font-weight:800; color:var(--accent-gold); margin-top:2px;">${singleBf ? `${singleBf.weight.toFixed(3)} kg ${singleBf.sector ? '(Sektor: '+singleBf.sector+')' : ''}` : '-'}</div>
+                </div>
+            `;
+        } else {
+            html += `
+                <div class="content-section" style="border-color: var(--accent-gold); background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(251,191,36,0.05)); margin-bottom:0;">
+                    <div style="font-size:9px; color:var(--accent-gold); font-weight:700;"><i class="fa-solid fa-trophy"></i> NAJVEĆA RIBA TAKMIČENJA</div>
+                    <div style="font-size:11px; font-weight:700; margin-top:2px;">${overallBf ? `${overallBf.anglerName} [${overallBf.type || 'Riba'}]` : 'Nije uneta'}</div>
+                    <div style="font-size:12px; font-weight:800; color:var(--accent-gold); margin-top:2px;">${overallBf ? `${overallBf.weight.toFixed(3)} kg ${overallBf.sector ? '(Sektor: '+overallBf.sector+')' : ''}` : '-'}</div>
+                </div>
+            `;
+
+            rounds.forEach(r => {
+                let rbf = rbfMap[r.id];
+                if (rbf && rbf.weight > 0) {
+                    html += `
+                        <div class="content-section" style="border-color: var(--primary); background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(56,189,248,0.05)); margin-bottom:0;">
+                            <div style="font-size:9px; color:var(--primary); font-weight:700;"><i class="fa-solid fa-fish"></i> NAJVEĆA RIBA - ${r.name.toUpperCase()}</div>
+                            <div style="font-size:11px; font-weight:700; margin-top:2px;">${rbf.anglerName} [${rbf.type || 'Riba'}]</div>
+                            <div style="font-size:12px; font-weight:800; color:var(--primary); margin-top:2px;">${rbf.weight.toFixed(3)} kg ${rbf.sector ? '(' + rbf.sector + ')' : ''}</div>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        html += `</div>`;
+
+        html += `
+            <div class="content-section">
+                <div class="section-header" style="margin-bottom:10px;">
+                    <div style="font-weight:700; font-size:13px"><i class="fa-solid fa-list-ol" style="color:var(--primary)"></i> Rang Lista Takmičenja</div>
+                    ${rounds.length > 1 ? `
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="font-size:11px; color:var(--text-muted); font-weight:700;">Prikaz kola:</span>
+                            <select id="view-round-filter" class="input-text" style="font-size:11px; padding:4px 8px;" onchange="selectedViewRoundId = this.value; renderCompetitionView(document.getElementById('tab-content'));">
+                                <option value="all" ${selectedViewRoundId === 'all' ? 'selected' : ''}>Sva kola (Ukupno)</option>
+                                ${rounds.map(r => `<option value="${r.id}" ${selectedViewRoundId === r.id ? 'selected' : ''}>${r.name}</option>`).join('')}
+                            </select>
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Plasman</th>
+                                <th>Takmičar / Ekipa</th>
+                                <th>Klub</th>
+                                ${selectedViewRoundId === 'all' ? 
+                                    rounds.map(r => `<th>${r.name} (Sektor / Box)</th>`).join('') + `<th>Ukupno Bodova</th><th>Ukupno Kg</th>` :
+                                    `<th>Sektor / Box (${rounds.find(r=>r.id===selectedViewRoundId)?.name || ''})</th><th>Bodovi u kolu</th><th>Ulov u kolu (Kg)</th>`
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${standings.length === 0 ? '<tr><td colspan="6"><div class="empty-state">Nema unetih takmičara.</div></td></tr>' : ''}
+                            ${standings.map((a, idx) => {
+                                const origAngler = comp.anglers.find(x => x.id === a.id);
+                                if (selectedViewRoundId === 'all') {
+                                    return `
+                                        <tr>
+                                            <td><strong>#${idx + 1}</strong></td>
+                                            <td><strong>${a.name}</strong></td>
+                                            <td>${a.club || '-'}</td>
+                                            ${rounds.map(r => {
+                                                let rSec = (origAngler && origAngler.roundSectors && origAngler.roundSectors[r.id]) ? origAngler.roundSectors[r.id] : (origAngler.sector || '-');
+                                                let rBox = (origAngler && origAngler.roundBoxes && origAngler.roundBoxes[r.id]) ? origAngler.roundBoxes[r.id] : (origAngler.box || '-');
+                                                return `<td><span style="color:var(--primary); font-weight:700;">${rSec} / Box: ${rBox}</span></td>`;
+                                            }).join('')}
+                                            <td style="color:var(--accent-gold); font-weight:800; font-size:13px;">${a.totalPoints} Bod.</td>
+                                            <td style="font-weight:800; color:var(--primary);">${a.totalWeight.toFixed(3)} kg</td>
+                                        </tr>
+                                    `;
+                                } else {
+                                    let rSec = (origAngler && origAngler.roundSectors && origAngler.roundSectors[selectedViewRoundId]) ? origAngler.roundSectors[selectedViewRoundId] : (origAngler.sector || '-');
+                                    let rBox = (origAngler && origAngler.roundBoxes && origAngler.roundBoxes[selectedViewRoundId]) ? origAngler.roundBoxes[selectedViewRoundId] : (origAngler.box || '-');
+                                    let rPts = a.roundPoints[selectedViewRoundId] !== undefined ? a.roundPoints[selectedViewRoundId] : '-';
+                                    let rKg = getAnglerRoundWeight(origAngler, selectedViewRoundId);
+                                    return `
+                                        <tr>
+                                            <td><strong>#${idx + 1}</strong></td>
+                                            <td><strong>${a.name}</strong></td>
+                                            <td>${a.club || '-'}</td>
+                                            <td><span style="color:var(--primary); font-weight:700;">${rSec} / Box: ${rBox}</span></td>
+                                            <td style="color:var(--accent-gold); font-weight:800;">${rPts} Bod.</td>
+                                            <td style="font-weight:800; color:var(--primary);">${rKg.toFixed(3)} kg</td>
+                                        </tr>
+                                    `;
+                                }
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        container.innerHTML = html;
+    }
+
+    // 2. MERENJE
+    function renderMeasurement(container) {
+        if (currentUser?.role !== 'admin' && currentUser?.role !== 'scaler') return;
+
+        const activeComps = (appData.competitions || []).filter(c => c.status === 'active');
+        if (!selectedCompetitionId && activeComps.length > 0) selectedCompetitionId = activeComps[0].id;
+        
+        const comp = appData.competitions.find(c => c.id === selectedCompetitionId);
+        if (!comp) { container.innerHTML = '<div class="empty-state">Nema aktivnih takmičenja za merenje.</div>'; return; }
+
+        if (!comp.activeRoundId && comp.rounds && comp.rounds.length > 0) comp.activeRoundId = comp.rounds[0].id;
+        const currentRoundId = comp.activeRoundId || 'r1';
+        const currentRoundObj = (comp.rounds || []).find(r => r.id === currentRoundId) || { name: 'Kolo 1' };
+
+        let html = `
+            <div class="content-section" style="border-color: var(--accent-gold);">
+                <div class="section-header">
+                    <div style="font-weight:700; font-size:13px; color:var(--accent-gold);"><i class="fa-solid fa-scale-balanced"></i> Modul za Unos Rezultata Merenja</div>
+                    <select id="meas-comp-select" class="input-text" style="max-width:220px;" onchange="selectedCompetitionId = this.value; renderMeasurement(document.getElementById('tab-content'));">
+                        ${(appData.competitions || []).map(c => `<option value="${c.id}" ${c.id === selectedCompetitionId ? 'selected' : ''}>${c.name}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group" style="margin-top:8px; margin-bottom:0; align-items:center;">
+                    <span style="font-size:11px; font-weight:700;">Izaberite kolo za unos ulova i najveće ribe:</span>
+                    <select id="meas-round-select" class="input-text" onchange="changeActiveRound('${comp.id}', this.value)">
+                        ${(comp.rounds || [{id:'r1', name:'Kolo 1'}]).map(r => `<option value="${r.id}" ${r.id === currentRoundId ? 'selected' : ''}>${r.name}</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+        `;
+
+        if (!comp.anglers || comp.anglers.length === 0) {
+            html += `<div class="empty-state">Nema takmičara u izabranom takmičenju.</div>`;
+            container.innerHTML = html;
+            return;
+        }
+
+        const anglers = comp.anglers || [];
+        const totalLakeWeight = anglers.reduce((sum, a) => sum + getAnglerTotalWeight(a), 0);
+        const standings = calculateFipsedStandings(comp);
+
+        html += `
+            <div class="content-section">
+                <div class="section-header">
+                    <div style="font-weight:700; font-size:12px;">Merenja za: ${comp.name} (${currentRoundObj.name})</div>
+                    <div style="font-weight:800; font-size:12px; color:var(--success);">Ukupno na jezeru: ${totalLakeWeight.toFixed(3)} kg</div>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Takmičar / Ekipa</th>
+                                <th>Sektor / Box (ovog kola)</th>
+                                <th>Novo Merenje (Kg)</th>
+                                <th>Ukupni Bodovi</th>
+                                <th>Ulovi u ovom kolu</th>
+                                <th>Ukupno Kg</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${anglers.map(a => {
+                                const standing = standings.find(s => s.id === a.id);
+                                let roundCatches = [];
+                                if (Array.isArray(a.catches)) {
+                                    if (currentRoundId === 'r1') roundCatches = a.catches;
+                                } else if (a.catches && a.catches[currentRoundId]) {
+                                    roundCatches = a.catches[currentRoundId];
+                                }
+
+                                let rSec = (a.roundSectors && a.roundSectors[currentRoundId]) ? a.roundSectors[currentRoundId] : (a.sector || '-');
+                                let rBox = (a.roundBoxes && a.roundBoxes[currentRoundId]) ? a.roundBoxes[currentRoundId] : (a.box || '-');
+
+                                return `
+                                    <tr>
+                                        <td><strong>${a.name}</strong> <div style="font-size:9px; color:var(--text-muted);">${a.club || 'Solo'}</div></td>
+                                        <td>${rSec} / ${rBox}</td>
+                                        <td>
+                                            <div class="add-catch-box">
+                                                <input type="number" step="0.001" placeholder="0.000" class="input-num" id="meas_val_${a.id}">
+                                                <button class="btn-add-catch" onclick="addMeasurementCatch('${comp.id}', '${a.id}', '${currentRoundId}')">+</button>
+                                            </div>
+                                        </td>
+                                        <td style="font-weight:800; color:var(--accent-gold);">${standing ? standing.totalPoints : 0} Bod.</td>
+                                        <td>
+                                            ${roundCatches.map((c, cIdx) => `
+                                                <span class="catch-tag">
+                                                    +${c.toFixed(3)}kg 
+                                                    <i class="fa-solid fa-xmark" style="cursor:pointer; color:var(--danger);" onclick="deleteMeasurementCatch('${comp.id}', '${a.id}', '${currentRoundId}', ${cIdx})"></i>
+                                                </span>
+                                            `).join('')}
+                                        </td>
+                                        <td style="font-weight:800; color:var(--primary);">${getAnglerTotalWeight(a).toFixed(3)} kg</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        let curRbf = (comp.roundBiggestFish && comp.roundBiggestFish[currentRoundId]) ? comp.roundBiggestFish[currentRoundId] : null;
+
+        html += `
+            <div class="content-section" style="border-color: var(--accent-gold); margin-top:14px;">
+                <div class="section-header">
+                    <div style="font-weight:700; font-size:13px; color:var(--accent-gold);"><i class="fa-solid fa-trophy"></i> Unos Najveće Ribe za: ${currentRoundObj.name}</div>
+                    <label style="font-size:10px; cursor:pointer;" class="checkbox-label">
+                        <input type="checkbox" onchange="showOptionalBFFields = this.checked; renderMeasurement(document.getElementById('tab-content'));" ${showOptionalBFFields ? 'checked' : ''}> Prikaži Sektor i Box (Opciono)
+                    </label>
+                </div>
+
+                ${curRbf ? `
+                    <div style="font-size:11px; background:rgba(251,191,36,0.1); border:1px solid var(--accent-gold); padding:8px; border-radius:6px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <strong>Trenutno najveća riba (${currentRoundObj.name}):</strong> ${curRbf.anglerName} (${curRbf.type || 'Šaran'}) - <strong style="color:var(--accent-gold);">${curRbf.weight.toFixed(3)} kg</strong> ${curRbf.sector ? '['+curRbf.sector+']' : ''}
+                        </div>
+                        <button class="btn btn-danger-outline" style="font-size:9px;" onclick="clearRoundBiggestFish('${comp.id}', '${currentRoundId}')">Resetuj</button>
+                    </div>
+                ` : ''}
+
+                <div class="form-group">
+                    <select id="bf-angler-select" class="input-text">
+                        <option value="">-- Izaberite takmičara / ekipu --</option>
+                        ${anglers.map(a => `<option value="${a.name}">${a.name} (${a.club || 'Solo'})</option>`).join('')}
+                    </select>
+                    ${showOptionalBFFields ? `
+                        <input type="text" id="bf-sector" class="input-text" placeholder="Sektor (opciono)">
+                        <input type="text" id="bf-box" class="input-text" placeholder="Box (opciono)">
+                    ` : ''}
+                </div>
+                <div class="form-group" style="align-items:center;">
+                    <span style="font-size:11px; font-weight:700;">Tip ribe:</span>
+                    <button class="type-btn ${selectedFishType === 'Šaran' ? 'active' : ''}" onclick="selectedFishType='Šaran'; renderMeasurement(document.getElementById('tab-content'));">Šaran</button>
+                    <button class="type-btn ${selectedFishType === 'Amur' ? 'active' : ''}" onclick="selectedFishType='Amur'; renderMeasurement(document.getElementById('tab-content'));">Amur</button>
+                    <input type="number" step="0.001" id="bf-weight" class="input-text" placeholder="Kilaža (kg)">
+                    <button class="btn btn-admin" onclick="saveRoundBiggestFish('${comp.id}', '${currentRoundId}')"><i class="fa-solid fa-save"></i> Sačuvaj za ${currentRoundObj.name}</button>
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = html;
+    }
+
+    function changeActiveRound(compId, roundId) {
+        const comp = appData.competitions.find(c => c.id === compId);
+        if (comp) {
+            comp.activeRoundId = roundId;
+            renderMeasurement(document.getElementById('tab-content'));
+        }
+    }
+
+    async function addMeasurementCatch(compId, anglerId, roundId) {
+        const comp = appData.competitions.find(c => c.id === compId);
+        if (!comp) return;
+
+        const inputElem = document.getElementById(`meas_val_${anglerId}`);
+        if (!inputElem) return;
+
+        let valStr = inputElem.value.trim();
+        if (valStr === '') return;
+        const val = parseFloat(valStr);
+        if (isNaN(val) || val < 0) {
+            alert('Unesite validnu kilažu (0 ili više)!');
+            return;
+        }
+
+        const angler = comp.anglers.find(a => a.id === anglerId);
+        if (angler) {
+            if (Array.isArray(angler.catches)) {
+                let oldArray = angler.catches;
+                angler.catches = { 'r1': oldArray };
+            }
+            if (!angler.catches) angler.catches = {};
+            if (!angler.catches[roundId]) angler.catches[roundId] = [];
+            
+            angler.catches[roundId].push(parseFloat(val.toFixed(3)));
+            await saveDataToCloud();
+            renderMeasurement(document.getElementById('tab-content'));
+        }
+    }
+
+    async function deleteMeasurementCatch(compId, anglerId, roundId, catchIdx) {
+        const comp = appData.competitions.find(c => c.id === compId);
+        if (!comp) return;
+
+        const angler = comp.anglers.find(a => a.id === anglerId);
+        if (angler && angler.catches) {
+            if (Array.isArray(angler.catches)) {
+                angler.catches.splice(catchIdx, 1);
+            } else if (angler.catches[roundId]) {
+                angler.catches[roundId].splice(catchIdx, 1);
+            }
+            await saveDataToCloud();
+            renderMeasurement(document.getElementById('tab-content'));
+        }
+    }
+
+    async function saveRoundBiggestFish(compId, roundId) {
+        const comp = appData.competitions.find(c => c.id === compId);
+        if (!comp) return;
+
+        const anglerName = document.getElementById('bf-angler-select').value;
+        const sector = showOptionalBFFields ? document.getElementById('bf-sector').value.trim() : '';
+        const box = showOptionalBFFields ? document.getElementById('bf-box').value.trim() : '';
+        const weight = parseFloat(document.getElementById('bf-weight').value) || 0;
+
+        if (!anglerName || weight <= 0) { alert('Izaberite takmičara i unesite kilažu!'); return; }
+
+        if (!comp.roundBiggestFish) comp.roundBiggestFish = {};
+        comp.roundBiggestFish[roundId] = { anglerName, sector, box, type: selectedFishType, weight: parseFloat(weight.toFixed(3)) };
+        
+        await saveDataToCloud();
+        alert('Najveća riba za izabrano kolo je uspešno sačuvana!');
+        renderMeasurement(document.getElementById('tab-content'));
+    }
+
+    async function clearRoundBiggestFish(compId, roundId) {
+        const comp = appData.competitions.find(c => c.id === compId);
+        if (comp && comp.roundBiggestFish && comp.roundBiggestFish[roundId]) {
+            delete comp.roundBiggestFish[roundId];
+            await saveDataToCloud();
+            renderMeasurement(document.getElementById('tab-content'));
+        }
+    }
+
+    // 3. ARHIVA
+    function renderArchives(container) {
+        let html = ``;
+
+        if (currentUser?.role === 'admin') {
+            html += `
+                <div class="content-section" style="border-color: var(--accent-gold);">
+                    <div class="section-header"><div style="font-weight:700; font-size:13px; color:var(--accent-gold);"><i class="fa-solid fa-box-archive"></i> Arhiviranje Aktivnog / Najavljenog Takmičenja</div></div>
+                    <div class="form-group">
+                        <select id="archive-select-comp" class="input-text">
+                            <option value="">-- Izaberite takmičenje za arhiviranje --</option>
+                            ${(appData.competitions || []).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                        </select>
+                        <button class="btn btn-admin" onclick="archiveSelectedCompetition()"><i class="fa-solid fa-box-archive"></i> Arhiviraj Takmičenje</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        const archivesList = appData.archives || [];
+        html += `
+            <div class="content-section" style="margin-top:14px;">
+                <div class="section-header">
+                    <div style="font-weight:700; font-size:13px"><i class="fa-solid fa-box-archive" style="color:var(--primary)"></i> Arhivirana Takmičenja (${archivesList.length})</div>
+                </div>
+                ${archivesList.length === 0 ? '<div class="empty-state">Nema arhiviranih takmičenja u bazi.</div>' : ''}
+                ${archivesList.map((arch, aIdx) => `
+                    <div class="archive-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                            <div>
+                                <strong style="font-size:13px; color:var(--primary); cursor:pointer;" onclick="openViewArchiveModal(${aIdx})">${arch.name}</strong>
+                                <span style="font-size:10px; color:var(--text-muted); margin-left:6px;">(${formatDateToDisplay(arch.date) || 'Arhiva'})</span>
+                            </div>
+                            <div style="display:flex; gap:4px;">
+                                <button class="btn btn-primary" style="font-size:9px; padding:3px 8px;" onclick="openViewArchiveModal(${aIdx})"><i class="fa-solid fa-trophy"></i> Pregled Rang Liste</button>
+                                ${currentUser?.role === 'admin' ? `<button class="btn btn-success" style="font-size:9px; padding:3px 8px;" onclick="restoreArchiveToActive(${aIdx})"><i class="fa-solid fa-rotate-left"></i> Vrati u aktivno</button>` : ''}
+                                ${currentUser?.role === 'admin' ? `<button class="btn btn-danger-outline" style="font-size:9px; padding:3px 8px;" onclick="deleteArchive(${aIdx})"><i class="fa-solid fa-trash"></i> Obriši</button>` : ''}
+                            </div>
+                        </div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:6px;">
+                            Pobednik: <strong>${arch.winner || '-'}</strong>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        container.innerHTML = html;
+    }
+
+    function openViewArchiveModal(aIdx) {
+        const arch = appData.archives[aIdx];
+        if (!arch) return;
+
+        archiveSelectedRoundTab = "all"; // Resetuj na ukupno pri otvaranju arhive
+        renderArchiveModalContent(aIdx);
+    }
+
+    function renderArchiveModalContent(aIdx) {
+        const arch = appData.archives[aIdx];
+        if (!arch) return;
+
+        const modal = document.getElementById('viewArchiveModal');
+        const content = document.getElementById('viewArchiveModalContent');
+
+        const rounds = arch.rounds || [{ id: 'r1', name: 'Kolo 1' }];
+        const rbfMap = arch.roundBiggestFish || {};
+        
+        // Ukupna kilaža na jezercu za arhivirano takmičenje
+        let totalArchiveLakeWeight = 0;
+        (arch.anglers || []).forEach(a => {
+            if (archiveSelectedRoundTab === 'all') {
+                totalArchiveLakeWeight += getAnglerTotalWeight(a);
+            } else {
+                totalArchiveLakeWeight += getAnglerRoundWeight(a, archiveSelectedRoundTab);
+            }
+        });
+
+        const standings = calculateFipsedStandings(arch, archiveSelectedRoundTab);
+        const teamStandings = calculateTeamStandings(arch);
+
+        let roundsBfHtml = rounds.map(r => {
+            let rbf = rbfMap[r.id];
+            return `<p><strong>Najveća riba - ${r.name}:</strong> <span style="color:var(--primary); font-weight:700;">${rbf ? `${rbf.anglerName} (${rbf.weight.toFixed(3)}kg)` : 'Nije uneta'}</span></p>`;
+        }).join('');
+
+        content.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid var(--border-color); padding-bottom:8px; flex-wrap:wrap; gap:6px;">
+                <h3 style="font-size:14px; color:var(--primary);"><i class="fa-solid fa-box-archive"></i> Arhiva: ${arch.name}</h3>
+                <button class="btn btn-primary" onclick="document.getElementById('viewArchiveModal').style.display='none'">X</button>
+            </div>
+
+            <!-- Datum i ukupna kilaža nezavisno u istom nivou -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:11px; flex-wrap:wrap; gap:8px;">
+                <div><strong>Datum:</strong> ${formatDateToDisplay(arch.date) || '-'}</div>
+                <div style="font-weight:800; color:var(--success);">
+                    <i class="fa-solid fa-fish"></i> Ukupna kilaža: ${totalArchiveLakeWeight.toFixed(3)} kg
+                </div>
+            </div>
+
+            <div style="font-size:11px; margin-bottom:10px; line-height:1.5;">
+                <p><strong>Pobednik (Pojedinačno):</strong> <span style="color:var(--accent-gold); font-weight:700;">${arch.winner || '-'}</span></p>
+                ${roundsBfHtml}
+            </div>
+
+            <!-- EKIPNA RANG LISTA -->
+            <div style="font-size:12px; font-weight:700; color:var(--accent-gold); margin-bottom:6px; margin-top:12px;"><i class="fa-solid fa-users"></i> Ekipna Rang Lista (Zbirni Rezultati):</div>
+            <div class="table-container" style="margin-bottom:16px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Plasman</th>
+                            <th>Ekipa / Klub</th>
+                            <th>Članovi Ekipe</th>
+                            <th>Ukupno Bodova (Suma)</th>
+                            <th>Ukupno Ulov (Kg)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${teamStandings.length === 0 ? '<tr><td colspan="5"><div class="empty-state">Nema sačuvanih ekipnih rezultata.</div></td></tr>' : ''}
+                        ${teamStandings.map((t, idx) => `
+                            <tr>
+                                <td><strong>#${idx + 1}</strong></td>
+                                <td><strong style="color:var(--primary);">${t.teamName}</strong></td>
+                                <td style="font-size:10px; color:var(--text-muted);">${t.members.join(', ')}</td>
+                                <td style="color:var(--accent-gold); font-weight:800;">${t.totalPoints} Bod.</td>
+                                <td style="font-weight:800; color:var(--success);">${t.totalWeight.toFixed(3)} kg</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- POJEDINAČNA RANG LISTA - TABOVI PO KOLIMA -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
+                <div style="font-size:12px; font-weight:700; color:var(--primary);"><i class="fa-solid fa-list-ol"></i> Pojedinačna Rang Lista:</div>
+                <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                    <button class="type-btn ${archiveSelectedRoundTab === 'all' ? 'active' : ''}" onclick="archiveSelectedRoundTab='all'; renderArchiveModalContent(${aIdx});">Ukupno</button>
+                    ${rounds.map(r => `<button class="type-btn ${archiveSelectedRoundTab === r.id ? 'active' : ''}" onclick="archiveSelectedRoundTab='${r.id}'; renderArchiveModalContent(${aIdx});">${r.name}</button>`).join('')}
+                </div>
+            </div>
+            
+            <div class="table-container" style="margin-bottom:12px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Plasman</th>
+                            <th>Takmičar</th>
+                            <th>Klub / Ekipa</th>
+                            ${archiveSelectedRoundTab === 'all' ? 
+                                rounds.map(r => `<th>${r.name} (Sektor / Box)</th>`).join('') + `<th>Ukupno Bodova</th><th>Ukupno Kg</th>` :
+                                `<th>Sektor / Box (${rounds.find(r=>r.id===archiveSelectedRoundTab)?.name || ''})</th><th>Bodovi u kolu</th><th>Ulov u kolu (Kg)</th>`
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${standings.length === 0 ? '<tr><td colspan="6"><div class="empty-state">Nema sačuvanih rezultata.</div></td></tr>' : ''}
+                        ${standings.map((a, idx) => {
+                            const origAngler = arch.anglers.find(x => x.id === a.id);
+                            if (archiveSelectedRoundTab === 'all') {
+                                return `
+                                    <tr>
+                                        <td><strong>#${idx + 1}</strong></td>
+                                        <td><strong>${a.name}</strong></td>
+                                        <td>${a.club || '-'}</td>
+                                        ${rounds.map(r => {
+                                            let rSec = (origAngler && origAngler.roundSectors && origAngler.roundSectors[r.id]) ? origAngler.roundSectors[r.id] : (origAngler.sector || '-');
+                                            let rBox = (origAngler && origAngler.roundBoxes && origAngler.roundBoxes[r.id]) ? origAngler.roundBoxes[r.id] : (origAngler.box || '-');
+                                            return `<td><span style="color:var(--primary); font-weight:700;">${rSec} / Box: ${rBox}</span></td>`;
+                                        }).join('')}
+                                        <td style="color:var(--accent-gold); font-weight:800;">${a.totalPoints} Bod.</td>
+                                        <td style="font-weight:800; color:var(--primary);">${a.totalWeight.toFixed(3)} kg</td>
+                                    </tr>
+                                `;
+                            } else {
+                                let rSec = (origAngler && origAngler.roundSectors && origAngler.roundSectors[archiveSelectedRoundTab]) ? origAngler.roundSectors[archiveSelectedRoundTab] : (origAngler.sector || '-');
+                                let rBox = (origAngler && origAngler.roundBoxes && origAngler.roundBoxes[archiveSelectedRoundTab]) ? origAngler.roundBoxes[archiveSelectedRoundTab] : (origAngler.box || '-');
+                                let rPts = a.roundPoints[archiveSelectedRoundTab] !== undefined ? a.roundPoints[archiveSelectedRoundTab] : '-';
+                                let rKg = getAnglerRoundWeight(origAngler, archiveSelectedRoundTab);
+                                return `
+                                    <tr>
+                                        <td><strong>#${idx + 1}</strong></td>
+                                        <td><strong>${a.name}</strong></td>
+                                        <td>${a.club || '-'}</td>
+                                        <td><span style="color:var(--primary); font-weight:700;">${rSec} / Box: ${rBox}</span></td>
+                                        <td style="color:var(--accent-gold); font-weight:800;">${rPts} Bod.</td>
+                                        <td style="font-weight:800; color:var(--primary);">${rKg.toFixed(3)} kg</td>
+                                    </tr>
+                                `;
+                            }
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                ${currentUser?.role === 'admin' ? `<button class="btn btn-success" onclick="restoreArchiveToActive(${aIdx})"><i class="fa-solid fa-rotate-left"></i> Vrati ovo takmičenje u aktivno</button>` : '<div></div>'}
+                <button class="btn btn-primary" onclick="document.getElementById('viewArchiveModal').style.display='none'">Zatvori</button>
+            </div>
+        `;
+        modal.style.display = 'flex';
+    }
+
+    async function archiveSelectedCompetition() {
+        if (currentUser?.role !== 'admin') return;
+        const compId = document.getElementById('archive-select-comp').value;
+        if (!compId) return;
+
+        const compIdx = appData.competitions.findIndex(c => c.id === compId);
+        const comp = appData.competitions[compIdx];
+
+        const standings = calculateFipsedStandings(comp);
+        const winner = standings[0] ? `${standings[0].name} (${standings[0].totalWeight.toFixed(3)}kg)` : 'Nema rezultata';
+
+        if (!appData.archives) appData.archives = [];
+        appData.archives.unshift({
+            id: comp.id || ('arch_' + Date.now()),
+            name: comp.name,
+            lake: comp.lake,
+            date: comp.date,
+            maxParticipants: comp.maxParticipants,
+            fee: comp.fee,
+            winner,
+            anglers: comp.anglers || [],
+            roundBiggestFish: comp.roundBiggestFish || {},
+            rounds: comp.rounds || []
+        });
+
+        appData.competitions.splice(compIdx, 1);
+        await saveDataToCloud();
+        alert('Takmičenje uspešno arhivirano!');
+        renderArchives(document.getElementById('tab-content'));
+    }
+
+    async function restoreArchiveToActive(aIdx) {
+        if (currentUser?.role !== 'admin') return;
+        const arch = appData.archives[aIdx];
+        if (!arch) return;
+
+        if (confirm(`Da li želite da vratite takmičenje "${arch.name}" u aktivno status?`)) {
+            const restoredComp = {
+                id: arch.id || ('comp_' + Date.now()),
+                name: arch.name,
+                lake: arch.lake || 'Jezero',
+                date: arch.date || '15/11/2026',
+                maxParticipants: arch.maxParticipants || '20',
+                fee: arch.fee || '0 RSD',
+                showFee: true,
+                status: 'active',
+                rounds: arch.rounds || [{ id: 'r1', name: 'Kolo 1', sectors: ['Sektor A', 'Sektor B'] }],
+                anglers: arch.anglers || [],
+                waitingList: [],
+                roundBiggestFish: arch.roundBiggestFish || {}
+            };
+
+            if (!appData.competitions) appData.competitions = [];
+            appData.competitions.push(restoredComp);
+            appData.archives.splice(aIdx, 1);
+
+            const modal = document.getElementById('viewArchiveModal');
+            if (modal) modal.style.display = 'none';
+
+            await saveDataToCloud();
+            alert(`Takmičenje "${restoredComp.name}" je vraćeno u aktivna takmičenja!`);
+            switchTab('home');
+        }
+    }
+
+    async function deleteArchive(idx) {
+        if (currentUser?.role !== 'admin') return;
+        if (confirm('Obrisati arhivu?')) {
+            appData.archives.splice(idx, 1);
+            await saveDataToCloud();
+            renderArchives(document.getElementById('tab-content'));
+        }
+    }
+
+    // 4. BAZA TAKMIČARA
+    function renderDatabase(container) {
+        let html = ``;
+
+        if (currentUser?.role === 'admin') {
+            html += `
+                <div class="content-section" style="border-color: var(--primary);">
+                    <div class="section-header"><div style="font-weight:700; font-size:13px; color:var(--primary);"><i class="fa-solid fa-user-plus"></i> Ručni Upis Novog Takmičara</div></div>
+                    <div class="form-group">
+                        <input type="text" id="db-manual-name" class="input-text" placeholder="Ime i prezime takmičara">
+                        <input type="text" id="db-manual-club" class="input-text" placeholder="Klub / Ekipa">
+                        <select id="db-target-comp-select" class="input-text">
+                            <option value="">-- Dodaj na listu čekanja za takmičenje (Opciono) --</option>
+                            ${(appData.competitions || []).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                        </select>
+                        <button class="btn btn-success" onclick="addManualAnglerFromDB()"><i class="fa-solid fa-plus"></i> Sačuvaj u Bazu</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        const usersList = appData.users || [];
+        const manualList = appData.manualAnglers || [];
+
+        html += `
+            <div class="content-section" style="margin-top:14px;">
+                <div class="section-header">
+                    <div style="font-weight:700; font-size:13px"><i class="fa-solid fa-user-check" style="color:var(--primary)"></i> Samostalno Registrovani Takmičari (${usersList.length})</div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Takmičar</th>
+                                <th>Klub</th>
+                                <th>Profil</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${usersList.length === 0 ? '<tr><td colspan="3"><div class="empty-state">Nema registrovanih takmičara.</div></td></tr>' : ''}
+                            ${usersList.map(u => `
+                                <tr>
+                                    <td><strong class="clickable-name" onclick="viewPublicProfile('${u.username}')">${u.name}</strong></td>
+                                    <td>${u.club || '-'}</td>
+                                    <td><button class="btn btn-primary" style="font-size:9px; padding:2px 4px;" onclick="viewPublicProfile('${u.username}')">Pogledaj profil</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="content-section" style="margin-top:14px;">
+                <div class="section-header">
+                    <div style="font-weight:700; font-size:13px"><i class="fa-solid fa-user-pen" style="color:var(--accent-gold)"></i> Ručno Kreirani Takmičari u Bazi (${manualList.length})</div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Ime i Prezime</th>
+                                <th>Klub</th>
+                                ${currentUser?.role === 'admin' ? '<th>Uredi / Poveži sa Nalogom</th>' : ''}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${manualList.length === 0 ? '<tr><td colspan="3"><div class="empty-state">Nema ručno unetih takmičara.</div></td></tr>' : ''}
+                            ${manualList.map((m, mIdx) => `
+                                <tr>
+                                    <td>
+                                        <input type="text" class="input-text" style="font-size:10px; padding:2px;" id="m_edit_name_${mIdx}" value="${m.name}">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="input-text" style="font-size:10px; padding:2px;" id="m_edit_club_${mIdx}" value="${m.club || ''}">
+                                    </td>
+                                    ${currentUser?.role === 'admin' ? `
+                                        <td>
+                                            <div style="display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
+                                                <button class="btn btn-primary" style="font-size:8px; padding:2px 4px;" onclick="saveManualAnglerEdit(${mIdx})">Sačuvaj</button>
+                                                <select id="link_select_${mIdx}" class="input-text" style="font-size:9px; padding:2px;">
+                                                    <option value="">-- Poveži sa nalogom --</option>
+                                                    ${usersList.map(u => `<option value="${u.username}">${u.name}</option>`).join('')}
+                                                </select>
+                                                <button class="btn btn-admin" style="font-size:8px; padding:2px 4px;" onclick="linkManualToUser(${mIdx})">Poveži</button>
+                                            </div>
+                                        </td>
+                                    ` : ''}
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        container.innerHTML = html;
+    }
+
+    async function addManualAnglerFromDB() {
+        if (currentUser?.role !== 'admin') return;
+        const compId = document.getElementById('db-target-comp-select').value;
+        const name = document.getElementById('db-manual-name').value.trim();
+        const club = document.getElementById('db-manual-club').value.trim();
+
+        if (!name) { alert('Unesite ime i prezime takmičara!'); return; }
+
+        if (!appData.manualAnglers) appData.manualAnglers = [];
+        if (!appData.manualAnglers.some(m => m.name.toLowerCase() === name.toLowerCase())) {
+            appData.manualAnglers.push({ id: 'm_' + Date.now(), name, club });
+        }
+
+        if (compId) {
+            const comp = appData.competitions.find(c => c.id === compId);
+            if (comp) {
+                if (!comp.waitingList) comp.waitingList = [];
+                comp.waitingList.push({ name, club: club || 'Solo', paid: false });
+            }
+        }
+
+        await saveDataToCloud();
+        alert(`Takmičar ${name} je uspešno sačuvan u bazi!`);
+        renderDatabase(document.getElementById('tab-content'));
+    }
+
+    async function saveManualAnglerEdit(mIdx) {
+        if (currentUser?.role !== 'admin') return;
+        const m = (appData.manualAnglers || [])[mIdx];
+        if (m) {
+            m.name = document.getElementById(`m_edit_name_${mIdx}`).value.trim();
+            m.club = document.getElementById(`m_edit_club_${mIdx}`).value.trim();
+            await saveDataToCloud();
+            alert('Izmene sačuvane!');
+        }
+    }
+
+    async function linkManualToUser(manualIdx) {
+        if (currentUser?.role !== 'admin') return;
+        const username = document.getElementById(`link_select_${manualIdx}`).value;
+        if (!username) return;
+
+        const manual = (appData.manualAnglers || [])[manualIdx];
+        appData.manualAnglers.splice(manualIdx, 1);
+        await saveDataToCloud();
+        alert(`Takmičar ${manual.name} je povezan sa nalogom!`);
+        renderDatabase(document.getElementById('tab-content'));
+    }
+
+    function viewPublicProfile(username) {
+        const user = (appData.users || []).find(u => u.username === username);
+        if (!user) return;
+
+        const modal = document.getElementById('profileModal');
+        const content = document.getElementById('profileModalContent');
+        const p = user.privacy || {};
+
+        let pastComps = getCombinedUserCompetitions(user);
+
+        content.innerHTML = `
+            <div style="text-align:center; margin-bottom:12px;">
+                <img src="${user.avatar || 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/user-ninja.svg'}" class="profile-avatar">
+                <h3 style="font-size:15px; margin-top:6px;">${(p.showName !== false) ? user.name : 'Aktivni Takmičar'}</h3>
+                ${(p.showClub !== false && user.club) ? `<div style="font-size:11px; color:var(--primary); font-weight:700;">${user.club}</div>` : ''}
+            </div>
+
+            <div style="font-size:11px; line-height:1.6; background:var(--bg-input); padding:10px; border-radius:8px; margin-bottom:10px;">
+                ${(p.showBirth !== false && user.birthDate) ? `<div><strong>Datum rođenja:</strong> ${formatDateToDisplay(user.birthDate)}</div>` : ''}
+                ${(p.showCity !== false && user.city) ? `<div><strong>Mesto / Grad:</strong> ${user.city}</div>` : ''}
+                ${(p.showTackle !== false && user.tackle) ? `<div><strong>Omiljeni pribor:</strong> ${user.tackle}</div>` : ''}
+                ${(p.showRecord !== false && user.biggestCatch) ? `<div><strong>Najveći ulov (Rekord):</strong> ${user.biggestCatch} kg</div>` : ''}
+            </div>
+
+            ${(p.showPast !== false && pastComps.length > 0) ? `
+                <div style="margin-top:10px;">
+                    <strong style="font-size:11px; color:var(--primary);"><i class="fa-solid fa-trophy"></i> Odpecana Takmičenja (${pastComps.length}):</strong>
+                    <div style="max-height:150px; overflow-y:auto; margin-top:4px;">
+                        ${pastComps.map(c => `
+                            <div style="background:var(--bg-card); font-size:10px; padding:6px; border-radius:4px; margin-bottom:4px; border:1px solid var(--border-color); display:flex; justify-content:space-between;">
+                                <div>
+                                    <strong>${c.name}</strong> (${c.lake})
+                                    <div style="color:var(--text-muted); font-size:9px;">${c.date}</div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <span style="color:var(--accent-gold); font-weight:700;">${c.rank ? c.rank + '. mesto' : '-'}</span>
+                                    <div style="color:var(--primary); font-size:9px;">${c.weight ? c.weight + ' kg' : ''}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            <div style="text-align:right; margin-top:10px;">
+                <button class="btn btn-primary" onclick="document.getElementById('profileModal').style.display='none'">Zatvori</button>
+            </div>
+        `;
+        modal.style.display = 'flex';
+    }
+
+    // 5. MOJ PROFIL KORISNIKA
+    function getCombinedUserCompetitions(user) {
+        let list = [];
+
+        if (user.pastCompetitions && Array.isArray(user.pastCompetitions)) {
+            user.pastCompetitions.forEach(c => {
+                list.push({
+                    id: c.id,
+                    type: 'manual',
+                    name: c.name,
+                    lake: c.lake || 'Nepoznato',
+                    date: formatDateToDisplay(c.date),
+                    rank: c.rank || '-',
+                    weight: parseFloat(c.weight || 0),
+                    notes: c.notes || '',
+                    photos: c.photos || []
+                });
+            });
+        }
+
+        (appData.competitions || []).forEach(comp => {
+            let angler = (comp.anglers || []).find(a => a.name.toLowerCase() === user.name.toLowerCase());
+            if (angler) {
+                let w = getAnglerTotalWeight(angler);
+                let st = calculateFipsedStandings(comp);
+                let rankIdx = st.findIndex(x => x.id === angler.id);
+                list.push({
+                    id: comp.id,
+                    type: 'app',
+                    name: comp.name + ' (Uživo)',
+                    lake: comp.lake,
+                    date: formatDateToDisplay(comp.date),
+                    rank: rankIdx >= 0 ? (rankIdx + 1) : '-',
+                    weight: w,
+                    notes: 'Odpecano kroz portal Livar Topola',
+                    photos: []
+                });
+            }
+        });
+
+        (appData.archives || []).forEach(arch => {
+            let angler = (arch.anglers || []).find(a => a.name.toLowerCase() === user.name.toLowerCase());
+            if (angler) {
+                let w = getAnglerTotalWeight(angler);
+                let st = calculateFipsedStandings(arch);
+                let rankIdx = st.findIndex(x => x.id === angler.id);
+                list.push({
+                    id: arch.id,
+                    type: 'app',
+                    name: arch.name + ' (Arhiva)',
+                    lake: arch.lake || 'Jezero',
+                    date: formatDateToDisplay(arch.date),
+                    rank: rankIdx >= 0 ? (rankIdx + 1) : '-',
+                    weight: w,
+                    notes: 'Arhivirano meč takmičenje',
+                    photos: []
+                });
+            }
+        });
+
+        return list;
+    }
+
+    function renderMyProfile(container) {
+        if (currentUser?.role !== 'user') return;
+        const user = (appData.users || []).find(u => u.username === currentUser.username);
+        if (!user) return;
+
+        if (!user.privacy) user.privacy = { showName: true, showBirth: true, showClub: true, showCity: true, showTackle: true, showRecord: true, showPast: true };
+        if (!user.teams) user.teams = [];
+        if (!user.pastCompetitions) user.pastCompetitions = [];
+        if (!user.gallery) user.gallery = [];
+
+        const combinedComps = getCombinedUserCompetitions(user);
+
+        const totalMatches = combinedComps.length;
+        const totalWeightSum = combinedComps.reduce((acc, c) => acc + (parseFloat(c.weight) || 0), 0);
+        const podiumCount = combinedComps.filter(c => c.rank && parseInt(c.rank) >= 1 && parseInt(c.rank) <= 3).length;
+
+        let filteredComps = combinedComps;
+        if (activeCompFilter === 'manual') filteredComps = combinedComps.filter(c => c.type === 'manual');
+        if (activeCompFilter === 'app') filteredComps = combinedComps.filter(c => c.type === 'app');
+
+        let html = `
+            <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+                <div class="stat-badge">
+                    <div class="num">${totalMatches}</div>
+                    <div class="label">Takmičenja</div>
+                </div>
+                <div class="stat-badge">
+                    <div class="num" style="color:var(--accent-gold);">${podiumCount}</div>
+                    <div class="label">Podijuma (1-3. mesto)</div>
+                </div>
+                <div class="stat-badge">
+                    <div class="num" style="color:var(--success);">${totalWeightSum.toFixed(3)} kg</div>
+                    <div class="label">Ukupan Ulov</div>
+                </div>
+            </div>
+
+            <div class="content-section">
+                <div class="section-header"><div style="font-weight:700; font-size:13px"><i class="fa-solid fa-user-gear"></i> Detaljna Podešavanja Naloga</div></div>
+                
+                <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px; background:var(--bg-input); padding:10px; border-radius:8px;">
+                    <img src="${user.avatar || 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/user-ninja.svg'}" class="profile-avatar" id="my-profile-img-preview">
+                    <div>
+                        <label class="file-btn"><i class="fa-solid fa-camera"></i> Izaberi profilnu sliku (max 3MB) <input type="file" accept="image/*" style="display:none;" onchange="uploadUserProfileAvatar(this)"></label>
+                        <div style="font-size:9px; color:var(--text-muted); margin-top:4px;">Slika se automatski kreira u vašem korisničkom folderu.</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div style="flex:1;">
+                        <input type="text" id="prof-name" class="input-text" style="width:100%" placeholder="Ime i prezime" value="${user.name || ''}">
+                        <label class="checkbox-label"><input type="checkbox" id="p-name" ${user.privacy.showName !== false ? 'checked' : ''}> Prikaži Ime Javno</label>
+                    </div>
+                    <div style="flex:1;">
+                        <input type="date" id="prof-birth" class="input-text" style="width:100%" value="${formatDateToInput(user.birthDate) || ''}">
+                        <label class="checkbox-label"><input type="checkbox" id="p-birth" ${user.privacy.showBirth !== false ? 'checked' : ''}> Prikaži Datum Rođenja</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div style="flex:1;">
+                        <input type="text" id="prof-club" class="input-text" style="width:100%" placeholder="Matični Klub" value="${user.club || ''}">
+                        <label class="checkbox-label"><input type="checkbox" id="p-club" ${user.privacy.showClub !== false ? 'checked' : ''}> Prikaži Klub Javno</label>
+                    </div>
+                    <div style="flex:1;">
+                        <input type="text" id="prof-city" class="input-text" style="width:100%" placeholder="Mesto odakle ste" value="${user.city || ''}">
+                        <label class="checkbox-label"><input type="checkbox" id="p-city" ${user.privacy.showCity !== false ? 'checked' : ''}> Prikaži Mesto Javno</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div style="flex:1;">
+                        <input type="text" id="prof-tackle" class="input-text" style="width:100%" placeholder="Pribor koji koristite" value="${user.tackle || ''}">
+                        <label class="checkbox-label"><input type="checkbox" id="p-tackle" ${user.privacy.showTackle !== false ? 'checked' : ''}> Prikaži Pribor Javno</label>
+                    </div>
+                    <div style="flex:1;">
+                        <input type="text" id="prof-record" class="input-text" style="width:100%" placeholder="Najveći ulov / Rekord (kg)" value="${user.biggestCatch || ''}">
+                        <label class="checkbox-label"><input type="checkbox" id="p-record" ${user.privacy.showRecord !== false ? 'checked' : ''}> Prikaži Rekord Javno</label>
+                    </div>
+                </div>
+
+                <button class="btn btn-success" style="width:100%; justify-content:center;" onclick="saveMyProfile()"><i class="fa-solid fa-save"></i> Sačuvaj Detalje Profila</button>
+            </div>
+
+            <div class="content-section" style="margin-top:14px; border-color: var(--accent-gold);">
+                <div class="section-header">
+                    <div style="font-weight:700; font-size:13px; color:var(--accent-gold);"><i class="fa-solid fa-trophy"></i> Moja Odpecana Takmičenja (${combinedComps.length})</div>
+                    <button class="btn btn-admin" onclick="openAddPastCompModal()"><i class="fa-solid fa-plus"></i> Dodaj Staro Takmičenje</button>
+                </div>
+
+                <div style="display:flex; gap:6px; margin-bottom:12px;">
+                    <button class="type-btn ${activeCompFilter === 'all' ? 'active' : ''}" onclick="activeCompFilter='all'; renderMyProfile(document.getElementById('tab-content'));">Sva (${combinedComps.length})</button>
+                    <button class="type-btn ${activeCompFilter === 'app' ? 'active' : ''}" onclick="activeCompFilter='app'; renderMyProfile(document.getElementById('tab-content'));">Aplikacija (Uživo)</button>
+                    <button class="type-btn ${activeCompFilter === 'manual' ? 'active' : ''}" onclick="activeCompFilter='manual'; renderMyProfile(document.getElementById('tab-content'));">Ručno uneta</button>
+                </div>
+
+                ${filteredComps.length === 0 ? '<div class="empty-state">Nema unetih takmičenja u ovoj kategoriji.</div>' : ''}
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    ${filteredComps.map(c => `
+                        <div class="comp-card-history ${c.type}">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                <div>
+                                    <strong style="font-size:13px; color:var(--text-main);">${c.name}</strong>
+                                    <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">
+                                        <i class="fa-solid fa-location-dot"></i> ${c.lake} | <i class="fa-solid fa-calendar-day"></i> ${c.date}
+                                    </div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <span style="font-size:11px; font-weight:800; color:var(--accent-gold); background:rgba(251,191,36,0.1); padding:2px 6px; border-radius:4px; border:1px solid var(--accent-gold);">
+                                        Plasman: ${c.rank ? c.rank + '. mesto' : '-'}
+                                    </span>
+                                    <div style="font-size:10px; font-weight:700; color:var(--primary); margin-top:3px;">Ulov: ${c.weight ? c.weight.toFixed(3) + ' kg' : '0 kg'}</div>
+                                </div>
+                            </div>
+                            ${c.notes ? `<div style="font-size:10px; font-style:italic; color:var(--text-muted); margin-top:6px; background:rgba(0,0,0,0.2); padding:4px 8px; border-radius:4px;">"${c.notes}"</div>` : ''}
+
+                            <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
+                                <div style="font-size:10px; color:var(--primary); font-weight:700;" onclick="openCompGalleryModal('${c.id}', '${c.type}')" style="cursor:pointer;">
+                                    <i class="fa-solid fa-images"></i> Galerija slika (${c.photos ? c.photos.length : 0})
+                                </div>
+                                <div style="display:flex; gap:4px;">
+                                    <button class="btn btn-primary" style="font-size:9px; padding:2px 6px;" onclick="openCompGalleryModal('${c.id}', '${c.type}')"><i class="fa-solid fa-camera"></i> Otvori / Dodaj Slike</button>
+                                    ${c.type === 'manual' ? `<button class="btn btn-danger-outline" style="font-size:9px; padding:2px 6px;" onclick="deletePastComp('${c.id}')"><i class="fa-solid fa-trash"></i></button>` : ''}
+                                </div>
+                            </div>
+
+                            ${(c.photos && c.photos.length > 0) ? `
+                                <div class="gallery-grid" style="margin-top:6px;">
+                                    ${c.photos.slice(0, 4).map(p => `<img src="${p}" class="gallery-thumb" onclick="openCompGalleryModal('${c.id}', '${c.type}')">`).join('')}
+                                    ${c.photos.length > 4 ? `<div style="display:flex; align-items:center; justify-content:center; background:var(--bg-card); border-radius:6px; font-size:10px; color:var(--primary); cursor:pointer;" onclick="openCompGalleryModal('${c.id}', '${c.type}')">+${c.photos.length - 4} više</div>` : ''}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div class="content-section" style="margin-top:14px; border-color: var(--primary);">
+                <div class="section-header">
+                    <div style="font-weight:700; font-size:13px; color:var(--primary);"><i class="fa-solid fa-images"></i> Moja Opšta Galerija Slika (Folder korisnika)</div>
+                    <label class="file-btn"><i class="fa-solid fa-cloud-arrow-up"></i> Dodaj Sliku u Profil (max 3MB)
+                        <input type="file" accept="image/*" multiple style="display:none;" onchange="uploadToGeneralUserGallery(this)">
+                    </label>
+                </div>
+                ${(!user.gallery || user.gallery.length === 0) ? '<div class="empty-state">Nema dodatih slika u opštoj galeriji.</div>' : ''}
+                <div class="gallery-grid">
+                    ${(user.gallery || []).map((img, idx) => `
+                        <div style="position:relative;">
+                            <img src="${img}" class="gallery-thumb" onclick="window.open('${img}', '_blank')">
+                            <button style="position:absolute; top:2px; right:2px; background:rgba(239,68,68,0.8); border:none; color:white; border-radius:50%; width:16px; height:16px; font-size:9px; cursor:pointer;" onclick="deleteGeneralGalleryPhoto(${idx})">X</button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div class="content-section" style="margin-top:14px; border-color: var(--primary);">
+                <div class="section-header"><div style="font-weight:700; font-size:13px; color:var(--primary);"><i class="fa-solid fa-key"></i> Promena Lozinke</div></div>
+                <div class="form-group">
+                    <input type="password" id="pass-new" class="input-text" placeholder="Nova lozinka">
+                    <input type="password" id="pass-confirm" class="input-text" placeholder="Potvrdite novu lozinku">
+                    <button class="btn btn-primary" onclick="changeMyPassword()"><i class="fa-solid fa-lock"></i> Promeni Lozinku</button>
+                </div>
+            </div>
+        `;
+        container.innerHTML = html;
+    }
+
+    function openAddPastCompModal() {
+        tempPastCompPhotos = [];
+        document.getElementById('past-comp-name').value = '';
+        document.getElementById('past-comp-lake').value = '';
+        document.getElementById('past-comp-date').value = '';
+        document.getElementById('past-comp-rank').value = '';
+        document.getElementById('past-comp-weight').value = '';
+        document.getElementById('past-comp-notes').value = '';
+        document.getElementById('past-comp-photo-preview').innerHTML = '';
+        document.getElementById('addPastCompModal').style.display = 'flex';
+    }
+
+    function handlePastCompPhotos(inputElem) {
+        if (!inputElem.files) return;
+        const files = Array.from(inputElem.files);
+        files.forEach(file => {
+            processImageFile(file, 800, 600, function(b64) {
+                tempPastCompPhotos.push(b64);
+                renderPastCompPreview();
+            });
+        });
+    }
+
+    function renderPastCompPreview() {
+        const preview = document.getElementById('past-comp-photo-preview');
+        preview.innerHTML = tempPastCompPhotos.map((img, idx) => `
+            <div style="position:relative;">
+                <img src="${img}" class="gallery-thumb">
+                <button style="position:absolute; top:2px; right:2px; background:rgba(239,68,68,0.8); border:none; color:white; border-radius:50%; width:16px; height:16px; font-size:9px; cursor:pointer;" onclick="tempPastCompPhotos.splice(${idx}, 1); renderPastCompPreview();">X</button>
+            </div>
+        `).join('');
+    }
+
+    async function savePastCompetition() {
+        if (currentUser?.role !== 'user') return;
+        const user = (appData.users || []).find(u => u.username === currentUser.username);
+        if (!user) return;
+
+        const name = document.getElementById('past-comp-name').value.trim();
+        const lake = document.getElementById('past-comp-lake').value.trim();
+        const rawDate = document.getElementById('past-comp-date').value;
+        const rank = document.getElementById('past-comp-rank').value;
+        const weight = document.getElementById('past-comp-weight').value;
+        const notes = document.getElementById('past-comp-notes').value.trim();
+
+        if (!name) { alert('Unesite naziv takmičenja!'); return; }
+
+        if (!user.pastCompetitions) user.pastCompetitions = [];
+
+        const newComp = {
+            id: 'past_' + Date.now(),
+            name,
+            lake,
+            date: formatDateToDisplay(rawDate) || rawDate,
+            rank,
+            weight: parseFloat(weight) || 0,
+            notes,
+            photos: [...tempPastCompPhotos]
+        };
+
+        user.pastCompetitions.push(newComp);
+        document.getElementById('addPastCompModal').style.display = 'none';
+        await saveDataToCloud();
+        alert('Staro takmičenje je uspešno dodato na vaš profil!');
+        renderMyProfile(document.getElementById('tab-content'));
+    }
+
+    async function deletePastComp(compId) {
+        if (currentUser?.role !== 'user') return;
+        const user = (appData.users || []).find(u => u.username === currentUser.username);
+        if (!user || !confirm('Obrišite ovo takmičenje iz istorije?')) return;
+
+        user.pastCompetitions = (user.pastCompetitions || []).filter(c => c.id !== compId);
+        await saveDataToCloud();
+        renderMyProfile(document.getElementById('tab-content'));
+    }
+
+    function openCompGalleryModal(compId, compType) {
+        if (currentUser?.role !== 'user') return;
+        const user = (appData.users || []).find(u => u.username === currentUser.username);
+        if (!user) return;
+
+        const combined = getCombinedUserCompetitions(user);
+        const comp = combined.find(c => c.id === compId);
+        if (!comp) return;
+
+        const titleElem = document.getElementById('comp-gallery-modal-title');
+        const bodyElem = document.getElementById('comp-gallery-modal-body');
+        const addInput = document.getElementById('add-more-gallery-input');
+
+        titleElem.innerHTML = `<i class="fa-solid fa-images"></i> Galerija: ${comp.name}`;
+
+        const photos = comp.photos || [];
+        if (photos.length === 0) {
+            bodyElem.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;">Nema slika u galeriji ovog takmičenja. Kliknite na dugme ispod da dodate fotografije sa ovog meča!</div>`;
+        } else {
+            bodyElem.innerHTML = photos.map((p, idx) => `
+                <div style="position:relative;">
+                    <img src="${p}" class="gallery-thumb" style="height:90px;" onclick="window.open('${p}', '_blank')">
+                    ${compType === 'manual' ? `<button style="position:absolute; top:3px; right:3px; background:rgba(239,68,68,0.85); border:none; color:white; border-radius:50%; width:20px; height:20px; font-size:10px; cursor:pointer;" onclick="deleteCompGalleryPhoto('${compId}', ${idx})">X</button>` : ''}
+                </div>
+            `).join('');
+        }
+
+        addInput.onchange = function() {
+            if (!this.files) return;
+            const files = Array.from(this.files);
+            let uploaded = 0;
+            files.forEach(file => {
+                processImageFile(file, 800, 600, async function(b64) {
+                    if (compType === 'manual') {
+                        const targetManual = user.pastCompetitions.find(c => c.id === compId);
+                        if (targetManual) {
+                            if (!targetManual.photos) targetManual.photos = [];
+                            targetManual.photos.push(b64);
+                        }
+                    } else {
+                        if (!user.gallery) user.gallery = [];
+                        user.gallery.push(b64);
+                    }
+                    uploaded++;
+                    if (uploaded === files.length) {
+                        await saveDataToCloud();
+                        openCompGalleryModal(compId, compType);
+                        renderMyProfile(document.getElementById('tab-content'));
+                    }
+                });
+            });
+        };
+
+        document.getElementById('compGalleryModal').style.display = 'flex';
+    }
+
+    async function deleteCompGalleryPhoto(compId, photoIdx) {
+        if (currentUser?.role !== 'user') return;
+        const user = (appData.users || []).find(u => u.username === currentUser.username);
+        if (!user) return;
+
+        const targetManual = (user.pastCompetitions || []).find(c => c.id === compId);
+        if (targetManual && targetManual.photos) {
+            targetManual.photos.splice(photoIdx, 1);
+            await saveDataToCloud();
+            openCompGalleryModal(compId, 'manual');
+            renderMyProfile(document.getElementById('tab-content'));
+        }
+    }
+
+    function uploadToGeneralUserGallery(inputElem) {
+        if (!inputElem.files || currentUser?.role !== 'user') return;
+        const user = (appData.users || []).find(u => u.username === currentUser.username);
+        if (!user) return;
+
+        if (!user.gallery) user.gallery = [];
+        const files = Array.from(inputElem.files);
+        let count = 0;
+
+        files.forEach(file => {
+            processImageFile(file, 800, 600, async function(b64) {
+                user.gallery.push(b64);
+                count++;
+                if (count === files.length) {
+                    await saveDataToCloud();
+                    renderMyProfile(document.getElementById('tab-content'));
+                }
+            });
+        });
+    }
+
+    async function deleteGeneralGalleryPhoto(photoIdx) {
+        if (currentUser?.role !== 'user') return;
+        const user = (appData.users || []).find(u => u.username === currentUser.username);
+        if (user && user.gallery) {
+            user.gallery.splice(photoIdx, 1);
+            await saveDataToCloud();
+            renderMyProfile(document.getElementById('tab-content'));
+        }
+    }
+
+    function uploadUserProfileAvatar(inputElem) {
+        if (inputElem.files && inputElem.files[0]) {
+            processImageFile(inputElem.files[0], 200, 200, function(base64Data) {
+                const user = (appData.users || []).find(u => u.username === currentUser.username);
+                if (user) {
+                    user.avatar = base64Data;
+                    document.getElementById('my-profile-img-preview').src = base64Data;
+                }
+            });
+        }
+    }
+
+    async function changeMyPassword() {
+        if (currentUser?.role !== 'user') return;
+        const user = (appData.users || []).find(u => u.username === currentUser.username);
+        if (!user) return;
+
+        const p1 = document.getElementById('pass-new').value.trim();
+        const p2 = document.getElementById('pass-confirm').value.trim();
+
+        if (!p1 || !p2) { alert('Popunite oba polja za lozinku!'); return; }
+        if (p1 !== p2) { alert('Lozinke se ne poklapaju!'); return; }
+        if (!validatePasswordStrength(p1)) { alert('Lozinka mora imati min 8 karaktera, 1 veliko, 1 malo slovo, 1 broj i 1 specijalni znak.'); return; }
+
+        user.password = p1;
+        await saveDataToCloud();
+        alert('Lozinka uspešno promenjena!');
+        document.getElementById('pass-new').value = '';
+        document.getElementById('pass-confirm').value = '';
+    }
+
+    async function saveMyProfile() {
+        if (currentUser?.role !== 'user') return;
+        const user = (appData.users || []).find(u => u.username === currentUser.username);
+        if (!user) return;
+
+        user.name = document.getElementById('prof-name').value.trim();
+        let rawBirth = document.getElementById('prof-birth').value;
+        user.birthDate = formatDateToDisplay(rawBirth) || rawBirth;
+        user.club = document.getElementById('prof-club').value.trim();
+        user.city = document.getElementById('prof-city').value.trim();
+        user.tackle = document.getElementById('prof-tackle').value.trim();
+        user.biggestCatch = document.getElementById('prof-record').value.trim();
+
+        user.privacy = {
+            showName: document.getElementById('p-name').checked,
+            showBirth: document.getElementById('p-birth').checked,
+            showClub: document.getElementById('p-club').checked,
+            showCity: document.getElementById('p-city').checked,
+            showTackle: document.getElementById('p-tackle').checked,
+            showRecord: document.getElementById('p-record').checked,
+            showPast: true
+        };
+
+        currentUser.name = user.name;
+        renderAuthUI();
+        await saveDataToCloud();
+        alert('Profil je uspešno sačuvan!');
+    }
+
+    // 6. UPRAVLJANJE / ADMIN
+    function renderManagement(container) {
+        if (currentUser?.role !== 'admin') return;
+
+        let html = `
+            <div class="content-section" style="border-color: var(--accent-gold);">
+                <div class="section-header"><div style="font-weight:700; font-size:13px"><i class="fa-solid fa-sliders" style="color:var(--accent-gold)"></i> Podešavanje Brendinga i Banera Aplikacije</div></div>
+                
+                <div class="form-group">
+                    <input type="text" id="app-set-title" class="input-text" placeholder="Naziv Aplikacije" value="${appData.projectTitle || ''}">
+                    <input type="text" id="app-set-subtitle" class="input-text" placeholder="Podnaslov / Namena" value="${appData.projectSubtitle || ''}">
+                </div>
+
+                <div class="form-group" style="align-items:center;">
+                    <div style="flex:1;">
+                        <span style="font-size:10px; color:var(--text-muted); display:block; margin-bottom:2px;">Logo aplikacije (max 3MB):</span>
+                        <label class="file-btn"><i class="fa-solid fa-upload"></i> Odaberi Logo sa uređaja <input type="file" accept="image/*" style="display:none;" onchange="uploadAppLogo(this)"></label>
+                    </div>
+                    <div style="flex:1;">
+                        <span style="font-size:10px; color:var(--text-muted); display:block; margin-bottom:2px;">Baner / Reklama desno od loga (max 3MB):</span>
+                        <label class="file-btn"><i class="fa-solid fa-rectangle-ad"></i> Odaberi Baner sa uređaja <input type="file" accept="image/*" style="display:none;" onchange="uploadAppBanner(this)"></label>
+                    </div>
+                </div>
+
+                <button class="btn btn-admin" style="width:100%; justify-content:center;" onclick="saveAppBranding()"><i class="fa-solid fa-save"></i> Sačuvaj Brending</button>
+            </div>
+
+            <div class="content-section" style="margin-top:14px; border-color: var(--primary);">
+                <div class="section-header"><div style="font-weight:700; font-size:13px; color:var(--primary);"><i class="fa-solid fa-circle-plus"></i> Dodaj Novo Takmičenje</div></div>
+                <div class="form-group">
+                    <input type="text" id="new-comp-name" class="input-text" placeholder="Naziv takmičenja">
+                    <input type="text" id="new-comp-lake" class="input-text" placeholder="Mesto / Jezero">
+                </div>
+                <div class="form-group">
+                    <input type="date" id="new-comp-date" class="input-text">
+                    <input type="number" id="new-comp-max" class="input-text" placeholder="Max takmičara">
+                    <input type="text" id="new-comp-fee" class="input-text" placeholder="Kotizacija">
+                </div>
+                <div class="form-group">
+                    <label class="file-btn" style="flex:1;"><i class="fa-solid fa-image"></i> Odaberi Baner za takmičenje (max 3MB) <input type="file" accept="image/*" id="new-comp-banner-file" style="display:none;"></label>
+                </div>
+                <button class="btn btn-success" style="width:100%; justify-content:center;" onclick="createNewCompetition()"><i class="fa-solid fa-plus"></i> Kreiraj Takmičenje</button>
+            </div>
+
+            <div class="content-section" style="margin-top:14px;">
+                <div class="section-header">
+                    <div style="font-weight:700; font-size:13px"><i class="fa-solid fa-list-check" style="color:var(--accent-gold)"></i> Upravljanje Kreiranim Takmičenjima (${(appData.competitions || []).length})</div>
+                </div>
+                ${(!appData.competitions || appData.competitions.length === 0) ? '<div class="empty-state">Nema kreiranih takmičenja.</div>' : ''}
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    ${(appData.competitions || []).map(c => `
+                        <div style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:8px; padding:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                            <div>
+                                <strong style="font-size:12px; color:var(--text-main);">${c.name}</strong>
+                                <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">
+                                    Jezero: ${c.lake} | Status: <span style="color:${c.status==='active'?'var(--success)':'var(--accent-gold)'}">${c.status==='active'?'Aktivno':'Najava'}</span>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:6px; align-items:center;">
+                                <select onchange="changeCompStatus('${c.id}', this.value)" style="font-size:10px; padding:3px 6px;" class="input-text">
+                                    <option value="upcoming" ${c.status === 'upcoming' ? 'selected' : ''}>Najava</option>
+                                    <option value="active" ${c.status === 'active' ? 'selected' : ''}>Aktivno</option>
+                                </select>
+                                <button class="btn btn-admin" style="font-size:10px;" onclick="openAdminCompModal('${c.id}')"><i class="fa-solid fa-sliders"></i> Otvori Podešavanja / Popup</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        container.innerHTML = html;
+    }
+
+    function uploadAppLogo(inputElem) {
+        if (inputElem.files && inputElem.files[0]) {
+            processImageFile(inputElem.files[0], 200, 200, function(base64Data) {
+                appData.logoUrl = base64Data;
+                updateBrandingUI();
+            });
+        }
+    }
+
+    function uploadAppBanner(inputElem) {
+        if (inputElem.files && inputElem.files[0]) {
+            processImageFile(inputElem.files[0], 600, 150, function(base64Data) {
+                appData.bannerUrl = base64Data;
+                updateBrandingUI();
+            });
+        }
+    }
+
+    async function changeCompStatus(compId, newStatus) {
+        const comp = appData.competitions.find(c => c.id === compId);
+        if (comp) {
+            comp.status = newStatus;
+            await saveDataToCloud();
+        }
+    }
+
+    async function saveAppBranding() {
+        if (currentUser?.role !== 'admin') return;
+        appData.projectTitle = document.getElementById('app-set-title').value.trim();
+        appData.projectSubtitle = document.getElementById('app-set-subtitle').value.trim();
+        await saveDataToCloud();
+        alert('Brending uspešno sačuvan!');
+    }
+
+    async function createNewCompetition() {
+        if (currentUser?.role !== 'admin') return;
+        const name = document.getElementById('new-comp-name').value.trim();
+        const lake = document.getElementById('new-comp-lake').value.trim();
+        if (!name || !lake) { alert('Unesite naziv i jezero!'); return; }
+
+        let rawDate = document.getElementById('new-comp-date').value;
+        let formattedDate = formatDateToDisplay(rawDate) || '15/11/2026';
+        const bannerFileInput = document.getElementById('new-comp-banner-file');
+
+        const doSave = async (bannerData = "") => {
+            if (!appData.competitions) appData.competitions = [];
+            appData.competitions.push({
+                id: 'comp_' + Date.now(), name, lake,
+                date: formattedDate,
+                maxParticipants: document.getElementById('new-comp-max').value || '15',
+                fee: document.getElementById('new-comp-fee').value || '0 RSD',
+                showFee: true, status: 'upcoming', bannerUrl: bannerData,
+                rounds: [{ id: 'r1', name: 'Kolo 1', lake, sectors: ['Sektor A', 'Sektor B'] }],
+                anglers: [], waitingList: [], roundBiggestFish: {}
+            });
+
+            await saveDataToCloud();
+            alert('Takmičenje uspešno kreirano!');
+            renderManagement(document.getElementById('tab-content'));
+        };
+
+        if (bannerFileInput && bannerFileInput.files && bannerFileInput.files[0]) {
+            processImageFile(bannerFileInput.files[0], 800, 300, async function(b64) {
+                await doSave(b64);
+            });
+        } else {
+            await doSave("");
+        }
+    }
+
+    loadDataFromCloud();
+    startLivePolling();
+</script>
+
+</body>
+</html>
