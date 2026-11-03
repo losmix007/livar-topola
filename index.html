@@ -111,6 +111,79 @@
         .comp-card-history { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
         .comp-card-history.manual { border-left: 3px solid var(--accent-gold); }
         .comp-card-history.app { border-left: 3px solid var(--primary); }
+
+        /* Stildovi za z-index i ugrađeni Lightbox u galeriji */
+        #profileModal { z-index: 1050; }
+        #publicCompGalleryModal { z-index: 1100; }
+        
+        .lightbox-container {
+            display: none;
+            position: relative;
+            background: rgba(0,0,0,0.9);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 12px;
+            text-align: center;
+            border: 1px solid var(--primary);
+        }
+        .lightbox-img-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 250px;
+            max-height: 420px;
+        }
+        .lightbox-img-wrapper img {
+            max-width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+        .lightbox-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(15, 23, 42, 0.7);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .lightbox-btn:hover { background: var(--primary); color: #000; }
+        .lightbox-btn.prev { left: 8px; }
+        .lightbox-btn.next { right: 8px; }
+        .lightbox-close-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: rgba(239, 68, 68, 0.8);
+            color: white;
+            border: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            z-index: 11;
+        }
+        .lightbox-counter {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
@@ -225,6 +298,34 @@
     </div>
 </div>
 
+<!-- Modal za javni pregled galerije takmičenja sa integrisanim Lightbox-om -->
+<div class="modal" id="publicCompGalleryModal">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+            <h3 style="font-size:14px; color:var(--primary);" id="public-gallery-modal-title"><i class="fa-solid fa-images"></i> Javna Galerija Takmičenja</h3>
+            <button class="btn btn-primary" onclick="document.getElementById('publicCompGalleryModal').style.display='none'">X</button>
+        </div>
+
+        <!-- Lightbox preglednik unutar modala -->
+        <div class="lightbox-container" id="public-gallery-lightbox">
+            <button class="lightbox-close-btn" onclick="closeLightbox()" title="Zatvori pregled slike"><i class="fa-solid fa-xmark"></i></button>
+            <div class="lightbox-img-wrapper">
+                <button class="lightbox-btn prev" onclick="navigateLightbox(-1)" title="Prethodna slika"><i class="fa-solid fa-chevron-left"></i></button>
+                <img id="lightbox-display-img" src="" alt="Pregled slike">
+                <button class="lightbox-btn next" onclick="navigateLightbox(1)" title="Sledeća slika"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+            <div class="lightbox-counter" id="lightbox-counter-text">Slika 1 od 1</div>
+        </div>
+
+        <!-- Mreža sličica galerije -->
+        <div id="public-gallery-modal-body" class="gallery-grid" style="grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:10px; max-height:350px; overflow-y:auto; padding:4px;"></div>
+        
+        <div style="margin-top:14px; text-align:right;">
+            <button class="btn btn-primary" onclick="document.getElementById('publicCompGalleryModal').style.display='none'">Zatvori</button>
+        </div>
+    </div>
+</div>
+
 <div class="modal" id="profileModal"><div class="modal-content" id="profileModalContent"></div></div>
 <div class="modal" id="eventModal"><div class="modal-content" id="eventModalContent"></div></div>
 <div class="modal" id="adminCompModal"><div class="modal-content" id="adminCompModalContent"></div></div>
@@ -244,10 +345,14 @@
     let selectedFishType = "Šaran"; 
     let showOptionalBFFields = false; 
     let selectedViewRoundId = "all"; 
-    let archiveSelectedRoundTab = "all"; // Pamti izabrani tab kola unutar modala arhive
+    let archiveSelectedRoundTab = "all";
 
     let tempPastCompPhotos = [];
     let activeCompFilter = 'all';
+
+    // Globalne promenljive za Lightbox navigaciju
+    let currentGalleryPhotos = [];
+    let currentPhotoIndex = 0;
 
     let appData = {
         projectTitle: "LIVAR - TOPOLA",
@@ -287,9 +392,17 @@
     };
 
     document.addEventListener('keydown', function(event) {
-        if (event.key === 'Enter') {
-            const loginModal = document.getElementById('loginModal');
-            if (loginModal && loginModal.style.display === 'flex') loginUser();
+        const loginModal = document.getElementById('loginModal');
+        if (event.key === 'Enter' && loginModal && loginModal.style.display === 'flex') {
+            loginUser();
+        }
+
+        // Navigacija preko tastature u Lightbox-u
+        const lightbox = document.getElementById('public-gallery-lightbox');
+        if (lightbox && lightbox.style.display === 'block') {
+            if (event.key === 'ArrowLeft') navigateLightbox(-1);
+            if (event.key === 'ArrowRight') navigateLightbox(1);
+            if (event.key === 'Escape') closeLightbox();
         }
     });
 
@@ -503,7 +616,7 @@
         const newUser = {
             id: 'u_' + Date.now(), name, username, email, password: pass, club,
             birthDate: '', city: '', tackle: '', biggestCatch: '', teams: [], pastCompetitions: [],
-            privacy: { showName: true, showBirth: true, showClub: true, showCity: true, showTackle: true, showRecord: true, showPast: true }
+            privacy: { showName: true, showBirth: true, showClub: true, showCity: true, showTackle: true, showRecord: true, showPast: true, showGalleries: true }
         };
 
         appData.users.push(newUser);
@@ -1526,7 +1639,7 @@
         const arch = appData.archives[aIdx];
         if (!arch) return;
 
-        archiveSelectedRoundTab = "all"; // Resetuj na ukupno pri otvaranju arhive
+        archiveSelectedRoundTab = "all";
         renderArchiveModalContent(aIdx);
     }
 
@@ -1540,7 +1653,6 @@
         const rounds = arch.rounds || [{ id: 'r1', name: 'Kolo 1' }];
         const rbfMap = arch.roundBiggestFish || {};
         
-        // Ukupna kilaža na jezercu za arhivirano takmičenje
         let totalArchiveLakeWeight = 0;
         (arch.anglers || []).forEach(a => {
             if (archiveSelectedRoundTab === 'all') {
@@ -1564,7 +1676,6 @@
                 <button class="btn btn-primary" onclick="document.getElementById('viewArchiveModal').style.display='none'">X</button>
             </div>
 
-            <!-- Datum i ukupna kilaža nezavisno u istom nivou -->
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:11px; flex-wrap:wrap; gap:8px;">
                 <div><strong>Datum:</strong> ${formatDateToDisplay(arch.date) || '-'}</div>
                 <div style="font-weight:800; color:var(--success);">
@@ -1577,7 +1688,6 @@
                 ${roundsBfHtml}
             </div>
 
-            <!-- EKIPNA RANG LISTA -->
             <div style="font-size:12px; font-weight:700; color:var(--accent-gold); margin-bottom:6px; margin-top:12px;"><i class="fa-solid fa-users"></i> Ekipna Rang Lista (Zbirni Rezultati):</div>
             <div class="table-container" style="margin-bottom:16px;">
                 <table>
@@ -1605,7 +1715,6 @@
                 </table>
             </div>
 
-            <!-- POJEDINAČNA RANG LISTA - TABOVI PO KOLIMA -->
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
                 <div style="font-size:12px; font-weight:700; color:var(--primary);"><i class="fa-solid fa-list-ol"></i> Pojedinačna Rang Lista:</div>
                 <div style="display:flex; gap:4px; flex-wrap:wrap;">
@@ -1904,6 +2013,7 @@
         const p = user.privacy || {};
 
         let pastComps = getCombinedUserCompetitions(user);
+        const canShowGallery = p.showGalleries !== false;
 
         content.innerHTML = `
             <div style="text-align:center; margin-bottom:12px;">
@@ -1922,19 +2032,27 @@
             ${(p.showPast !== false && pastComps.length > 0) ? `
                 <div style="margin-top:10px;">
                     <strong style="font-size:11px; color:var(--primary);"><i class="fa-solid fa-trophy"></i> Odpecana Takmičenja (${pastComps.length}):</strong>
-                    <div style="max-height:150px; overflow-y:auto; margin-top:4px;">
-                        ${pastComps.map(c => `
-                            <div style="background:var(--bg-card); font-size:10px; padding:6px; border-radius:4px; margin-bottom:4px; border:1px solid var(--border-color); display:flex; justify-content:space-between;">
-                                <div>
-                                    <strong>${c.name}</strong> (${c.lake})
-                                    <div style="color:var(--text-muted); font-size:9px;">${c.date}</div>
+                    <div style="max-height:180px; overflow-y:auto; margin-top:4px;">
+                        ${pastComps.map(c => {
+                            const hasPhotos = c.photos && c.photos.length > 0;
+                            return `
+                                <div style="background:var(--bg-card); font-size:10px; padding:6px; border-radius:4px; margin-bottom:4px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                                    <div>
+                                        <strong>${c.name}</strong> (${c.lake})
+                                        <div style="color:var(--text-muted); font-size:9px;">${c.date}</div>
+                                    </div>
+                                    <div style="text-align:right;">
+                                        <span style="color:var(--accent-gold); font-weight:700;">${c.rank ? c.rank + '. mesto' : '-'}</span>
+                                        <div style="color:var(--primary); font-size:9px;">${c.weight ? c.weight + ' kg' : ''}</div>
+                                        ${(canShowGallery && hasPhotos) ? `
+                                            <button class="btn btn-primary" style="font-size:8px; padding:2px 4px; margin-top:3px;" onclick="openPublicCompGallery('${user.username}', '${c.id}')">
+                                                <i class="fa-solid fa-images"></i> Galerija (${c.photos.length})
+                                            </button>
+                                        ` : ''}
+                                    </div>
                                 </div>
-                                <div style="text-align:right;">
-                                    <span style="color:var(--accent-gold); font-weight:700;">${c.rank ? c.rank + '. mesto' : '-'}</span>
-                                    <div style="color:var(--primary); font-size:9px;">${c.weight ? c.weight + ' kg' : ''}</div>
-                                </div>
-                            </div>
-                        `).join('')}
+                            `;
+                        }).join('')}
                     </div>
                 </div>
             ` : ''}
@@ -1944,6 +2062,70 @@
             </div>
         `;
         modal.style.display = 'flex';
+    }
+
+    function openPublicCompGallery(username, compId) {
+        const user = (appData.users || []).find(u => u.username === username);
+        if (!user) return;
+
+        const combined = getCombinedUserCompetitions(user);
+        const comp = combined.find(c => c.id === compId);
+        if (!comp) return;
+
+        const modal = document.getElementById('publicCompGalleryModal');
+        const titleElem = document.getElementById('public-gallery-modal-title');
+        const bodyElem = document.getElementById('public-gallery-modal-body');
+        const lightbox = document.getElementById('public-gallery-lightbox');
+
+        lightbox.style.display = 'none'; // Sakrij lightbox pri otvaranju nove galerije
+        titleElem.innerHTML = `<i class="fa-solid fa-images"></i> Galerija slika: ${comp.name} (${user.name})`;
+
+        currentGalleryPhotos = comp.photos || [];
+        if (currentGalleryPhotos.length === 0) {
+            bodyElem.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;">Nema dostupnih slika za ovo takmičenje.</div>`;
+        } else {
+            bodyElem.innerHTML = currentGalleryPhotos.map((p, idx) => `
+                <div style="position:relative; text-align:center;">
+                    <img src="${p}" class="gallery-thumb" style="height:90px; cursor:pointer;" onclick="openLightboxImage(${idx})" title="Klikni za otvaranje pregledaču">
+                    <div style="font-size:8px; color:var(--primary); margin-top:2px; cursor:pointer;" onclick="openLightboxImage(${idx})"><i class="fa-solid fa-expand"></i> Uvećaj</div>
+                </div>
+            `).join('');
+        }
+
+        modal.style.display = 'flex';
+    }
+
+    // Lightbox funkcionalnosti
+    function openLightboxImage(index) {
+        if (!currentGalleryPhotos || currentGalleryPhotos.length === 0) return;
+        currentPhotoIndex = index;
+
+        const lightbox = document.getElementById('public-gallery-lightbox');
+        const imgElem = document.getElementById('lightbox-display-img');
+        const counterElem = document.getElementById('lightbox-counter-text');
+
+        imgElem.src = currentGalleryPhotos[currentPhotoIndex];
+        counterElem.innerText = `Slika ${currentPhotoIndex + 1} od ${currentGalleryPhotos.length}`;
+        lightbox.style.display = 'block';
+    }
+
+    function navigateLightbox(direction) {
+        if (!currentGalleryPhotos || currentGalleryPhotos.length === 0) return;
+
+        currentPhotoIndex += direction;
+        if (currentPhotoIndex < 0) currentPhotoIndex = currentGalleryPhotos.length - 1;
+        if (currentPhotoIndex >= currentGalleryPhotos.length) currentPhotoIndex = 0;
+
+        const imgElem = document.getElementById('lightbox-display-img');
+        const counterElem = document.getElementById('lightbox-counter-text');
+
+        imgElem.src = currentGalleryPhotos[currentPhotoIndex];
+        counterElem.innerText = `Slika ${currentPhotoIndex + 1} od ${currentGalleryPhotos.length}`;
+    }
+
+    function closeLightbox() {
+        const lightbox = document.getElementById('public-gallery-lightbox');
+        if (lightbox) lightbox.style.display = 'none';
     }
 
     // 5. MOJ PROFIL KORISNIKA
@@ -1981,7 +2163,7 @@
                     rank: rankIdx >= 0 ? (rankIdx + 1) : '-',
                     weight: w,
                     notes: 'Odpecano kroz portal Livar Topola',
-                    photos: []
+                    photos: user.gallery || []
                 });
             }
         });
@@ -2001,7 +2183,7 @@
                     rank: rankIdx >= 0 ? (rankIdx + 1) : '-',
                     weight: w,
                     notes: 'Arhivirano meč takmičenje',
-                    photos: []
+                    photos: user.gallery || []
                 });
             }
         });
@@ -2014,7 +2196,8 @@
         const user = (appData.users || []).find(u => u.username === currentUser.username);
         if (!user) return;
 
-        if (!user.privacy) user.privacy = { showName: true, showBirth: true, showClub: true, showCity: true, showTackle: true, showRecord: true, showPast: true };
+        if (!user.privacy) user.privacy = { showName: true, showBirth: true, showClub: true, showCity: true, showTackle: true, showRecord: true, showPast: true, showGalleries: true };
+        if (user.privacy.showGalleries === undefined) user.privacy.showGalleries = true;
         if (!user.teams) user.teams = [];
         if (!user.pastCompetitions) user.pastCompetitions = [];
         if (!user.gallery) user.gallery = [];
@@ -2089,6 +2272,14 @@
                     </div>
                 </div>
 
+                <div class="form-group" style="margin-bottom:12px;">
+                    <div style="flex:1; background:var(--bg-input); padding:8px; border-radius:6px; border:1px solid var(--border-color);">
+                        <label class="checkbox-label" style="font-size:11px; font-weight:700; color:var(--primary);">
+                            <input type="checkbox" id="p-galleries" ${user.privacy.showGalleries !== false ? 'checked' : ''}> Prikaži Moje Galerije Slika Javno (u bazi takmičara)
+                        </label>
+                    </div>
+                </div>
+
                 <button class="btn btn-success" style="width:100%; justify-content:center;" onclick="saveMyProfile()"><i class="fa-solid fa-save"></i> Sačuvaj Detalje Profila</button>
             </div>
 
@@ -2125,7 +2316,7 @@
                             ${c.notes ? `<div style="font-size:10px; font-style:italic; color:var(--text-muted); margin-top:6px; background:rgba(0,0,0,0.2); padding:4px 8px; border-radius:4px;">"${c.notes}"</div>` : ''}
 
                             <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
-                                <div style="font-size:10px; color:var(--primary); font-weight:700;" onclick="openCompGalleryModal('${c.id}', '${c.type}')" style="cursor:pointer;">
+                                <div style="font-size:10px; color:var(--primary); font-weight:700; cursor:pointer;" onclick="openCompGalleryModal('${c.id}', '${c.type}')">
                                     <i class="fa-solid fa-images"></i> Galerija slika (${c.photos ? c.photos.length : 0})
                                 </div>
                                 <div style="display:flex; gap:4px;">
@@ -2156,7 +2347,7 @@
                 <div class="gallery-grid">
                     ${(user.gallery || []).map((img, idx) => `
                         <div style="position:relative;">
-                            <img src="${img}" class="gallery-thumb" onclick="window.open('${img}', '_blank')">
+                            <img src="${img}" class="gallery-thumb" onclick="openCompGalleryModal('${user.username}', 'user_general')">
                             <button style="position:absolute; top:2px; right:2px; background:rgba(239,68,68,0.8); border:none; color:white; border-radius:50%; width:16px; height:16px; font-size:9px; cursor:pointer;" onclick="deleteGeneralGalleryPhoto(${idx})">X</button>
                         </div>
                     `).join('')}
@@ -2272,8 +2463,8 @@
             bodyElem.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;">Nema slika u galeriji ovog takmičenja. Kliknite na dugme ispod da dodate fotografije sa ovog meča!</div>`;
         } else {
             bodyElem.innerHTML = photos.map((p, idx) => `
-                <div style="position:relative;">
-                    <img src="${p}" class="gallery-thumb" style="height:90px;" onclick="window.open('${p}', '_blank')">
+                <div style="position:relative; text-align:center;">
+                    <img src="${p}" class="gallery-thumb" style="height:90px; cursor:pointer;">
                     ${compType === 'manual' ? `<button style="position:absolute; top:3px; right:3px; background:rgba(239,68,68,0.85); border:none; color:white; border-radius:50%; width:20px; height:20px; font-size:10px; cursor:pointer;" onclick="deleteCompGalleryPhoto('${compId}', ${idx})">X</button>` : ''}
                 </div>
             `).join('');
@@ -2404,6 +2595,7 @@
             showCity: document.getElementById('p-city').checked,
             showTackle: document.getElementById('p-tackle').checked,
             showRecord: document.getElementById('p-record').checked,
+            showGalleries: document.getElementById('p-galleries').checked,
             showPast: true
         };
 
